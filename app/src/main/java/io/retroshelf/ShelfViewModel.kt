@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-data class CatalogueState(val games: List<Game> = emptyList(), val loading: Boolean = false, val error: String? = null, val offline: Boolean = false)
+data class CatalogueState(val games: List<Game> = emptyList(), val loading: Boolean = false, val error: String? = null, val offline: Boolean = false, val nextPage: Int? = null, val total: Int? = null, val loadingMore: Boolean = false)
 class ShelfViewModel(application: Application) : AndroidViewModel(application) {
     val graph = AppGraph(application)
     private val preferences = application.getSharedPreferences("settings", 0)
@@ -37,10 +37,26 @@ class ShelfViewModel(application: Application) : AndroidViewModel(application) {
         loadJob = viewModelScope.launch {
             try {
                 val (games, offline) = graph.repository.catalogue(provider, refresh)
-                _catalogue.value = CatalogueState(games, offline = offline)
+                val snapshot = graph.db.shelf().snapshot(provider)
+                _catalogue.value = CatalogueState(games, offline = offline, nextPage = snapshot?.nextPage, total = snapshot?.total)
                 _status.value += provider to if(offline) "Offline · cached catalogue" else "Catalogue available"
             } catch(e: CancellationException) { throw e }
             catch(e: Exception) { _catalogue.value = CatalogueState(error = e.message ?: "Connection failed"); _status.value += provider to "Connection failed" }
+        }
+    }
+    fun loadMore(provider: String) {
+        if(active != provider || _catalogue.value.loading || _catalogue.value.loadingMore || _catalogue.value.nextPage == null) return
+        _catalogue.value = _catalogue.value.copy(loadingMore = true)
+        loadJob = viewModelScope.launch {
+            try {
+                val games = graph.repository.loadMore(provider)
+                val snapshot = graph.db.shelf().snapshot(provider)
+                if(active == provider) _catalogue.value = _catalogue.value.copy(games = games, nextPage = snapshot?.nextPage, total = snapshot?.total, loadingMore = false, offline = false)
+            } catch(e: CancellationException) { throw e }
+            catch(e: Exception) {
+                if(active == provider) _catalogue.value = _catalogue.value.copy(loadingMore = false)
+                messages.emit(e.message ?: "Could not load more listings. Saved entries are still available.")
+            }
         }
     }
     fun view(game: Game) { viewModelScope.launch { safely { graph.repository.view(game) } } }

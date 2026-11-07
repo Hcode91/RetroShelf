@@ -12,12 +12,22 @@ class ShelfRepository(val registry: ProviderRegistry, val dao: ShelfDao) {
         val cached = dao.catalogue(provider)
         if(!refresh && (cached.isNotEmpty() || dao.snapshot(provider) != null)) return cached.map(::decode) to false
         try {
-            val games = registry.get(provider).fetchGames(refresh)
+            val source = registry.get(provider)
+            val batch = if(source is PagedGameProvider) source.fetchCataloguePage(1) else CatalogueBatch(source.fetchGames(refresh))
+            val games = batch.games
             val rows = games.map { g -> StoredGame(g.id, provider, gson.toJson(g), cachedAt = System.currentTimeMillis()) }
-            dao.replaceCatalogue(provider, rows)
+            dao.replaceCatalogue(provider, rows, batch.nextPage, batch.total)
             return games to false
         } catch(e: kotlinx.coroutines.CancellationException) { throw e }
         catch(e: Exception) { if(cached.isNotEmpty()) return cached.map(::decode) to true; throw e }
+    }
+    suspend fun loadMore(provider: String): List<Game> {
+        val next = dao.snapshot(provider)?.nextPage ?: return dao.catalogue(provider).map(::decode)
+        val source = registry.get(provider) as? PagedGameProvider ?: return dao.catalogue(provider).map(::decode)
+        val batch = source.fetchCataloguePage(next)
+        val rows = batch.games.map { StoredGame(it.id, provider, gson.toJson(it), cachedAt = System.currentTimeMillis()) }
+        dao.appendCatalogue(provider, rows, batch.nextPage, batch.total)
+        return dao.catalogue(provider).map(::decode)
     }
     suspend fun details(game: Game, refresh: Boolean = false): Game {
         val saved = dao.game(game.id)?.let(::decode) ?: game

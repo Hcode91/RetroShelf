@@ -116,6 +116,33 @@ class RepositoryTests {
         assertEquals(3, provider.detailCalls)
     }
 
+    @Test fun `paged sources persist loaded entries and cursor across reopening`() = runTest {
+        val dao = MemoryDao(); val p = PagedFixture(game()); val registry = ProviderRegistry(listOf(p))
+        val repo = ShelfRepository(registry, dao)
+        val first = repo.catalogue(p.id, false).first.single()
+        repo.toggleFavorite(first)
+        val reopened = ShelfRepository(registry, dao)
+        assertEquals(1, reopened.catalogue(p.id, false).first.size)
+        assertEquals(listOf(1), p.pages)
+        assertEquals(2, dao.snapshot(p.id)!!.nextPage)
+        assertEquals(2, reopened.loadMore(p.id).size) // Duplicate IDs are merged.
+        assertTrue(dao.game(first.id)!!.favorite)
+        assertEquals(3, dao.snapshot(p.id)!!.nextPage)
+        assertEquals(3, ShelfRepository(registry, dao).loadMore(p.id).size)
+        assertNull(dao.snapshot(p.id)!!.nextPage)
+        reopened.loadMore(p.id)
+        assertEquals(listOf(1,2,3), p.pages)
+    }
+    @Test fun `failed remote page preserves saved entries cursor and bookmarks for explicit retry`() = runTest {
+        val dao = MemoryDao(); val p = PagedFixture(game()); val repo = ShelfRepository(ProviderRegistry(listOf(p)), dao)
+        repo.catalogue(p.id, false); p.failNext = true
+        try { repo.loadMore(p.id); fail("Expected page failure") } catch(_: java.io.IOException) { }
+        assertEquals(1, dao.catalogue(p.id).size)
+        assertEquals(2, dao.snapshot(p.id)!!.nextPage)
+        assertEquals(2, repo.loadMore(p.id).size)
+        assertEquals(listOf(1,2,2), p.pages)
+    }
+
 }
 
 private class CountingProvider(private val game: Game) : GameProvider {
@@ -130,4 +157,25 @@ private class CountingProvider(private val game: Game) : GameProvider {
     var entries = listOf(game)
     override suspend fun fetchGames(refresh: Boolean): List<Game> { catalogueCalls++; return entries }
     override suspend fun fetchGameDetails(game: Game): Game { detailCalls++; return game.copy(detailsFetchedAt = System.currentTimeMillis()) }
+}
+
+private class PagedFixture(game: Game) : PagedGameProvider {
+    override val id = "ziperto"
+    override val name = "Paged fixture"
+    override val description = ""
+    override val website = "https://example.com"
+    override val supportedConsoles = setOf("SWITCH")
+    private val first = game.copy(id="ziperto:one", provider=id, slug="one", consoles=listOf("SWITCH"))
+    val pages = mutableListOf<Int>()
+    var failNext = false
+    override suspend fun fetchGames(refresh: Boolean): List<Game> = error("Repository must request one explicit page")
+    override suspend fun fetchCataloguePage(page: Int): CatalogueBatch {
+        pages += page
+        if(failNext) { failNext = false; throw java.io.IOException("Offline") }
+        return when(page) {
+            1 -> CatalogueBatch(listOf(first), 2, 3)
+            2 -> CatalogueBatch(listOf(first, first.copy(id="ziperto:two", slug="two")), 3, 3)
+            else -> CatalogueBatch(listOf(first.copy(id="ziperto:three", slug="three")), null, 3)
+        }
+    }
 }

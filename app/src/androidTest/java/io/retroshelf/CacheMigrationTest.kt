@@ -20,14 +20,17 @@ class CacheMigrationTest {
             old.execSQL("INSERT INTO games VALUES ('udb:saved', 'udb', '{}', 1, 1, 1)")
             old.version = 1
         }
-        fun open() = Room.databaseBuilder(context, ShelfDatabase::class.java, name).addMigrations(ShelfDatabase.MIGRATION_1_2).build()
+        fun open() = Room.databaseBuilder(context, ShelfDatabase::class.java, name).addMigrations(ShelfDatabase.MIGRATION_1_2, ShelfDatabase.MIGRATION_2_3).build()
         try {
             open().use { migrated ->
                 assertTrue(migrated.shelf().game("udb:saved")!!.favorite)
                 assertEquals(1L, migrated.shelf().snapshot("udb")!!.fetchedAt)
                 migrated.shelf().replaceCatalogue("empty", emptyList())
+                migrated.shelf().replaceCatalogue("paged", emptyList(), nextPage = 2, total = 1000)
             }
             open().use { reopened ->
+                assertEquals(2, reopened.shelf().snapshot("paged")!!.nextPage)
+                assertEquals(1000, reopened.shelf().snapshot("paged")!!.total)
                 assertNotNull(reopened.shelf().snapshot("empty"))
                 assertTrue(reopened.shelf().catalogue("empty").isEmpty())
             }

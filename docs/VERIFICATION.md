@@ -53,3 +53,11 @@ The production Kotlin parser processed the four public MediaWiki catalogue respo
 Sample details were the respective Blockamok Remix articles. Wii U's article has no screenshot section, which is preserved as missing metadata. Sample artwork returned HTTP 200 / image/png: 29,005 bytes for the shared Switch/Wii U image, 29,023 bytes for Wii, and 17,721 bytes for 3DS. Shared artwork URLs were checked only once.
 
 Thirty-eight deterministic JVM provider/repository tests passed locally, including parameterized tests for each new platform's real catalogue/detail fixtures, selected-platform requests, scoped identifiers, cached catalogues, and article-only detail loading after restart. Tests also cover legitimate colon-containing game titles while excluding administrative wiki namespaces. No APK was built locally. Android build and emulator outcomes for this revision remain uninspected, as requested.
+
+## Ziperto Switch source — 2026-11-07
+
+Verified the public category, robots.txt and WordPress API. Category ID 3534 reported 13,812 listings. Two small live listing pages normalized into four Switch records with four cover URLs, eight screenshot URLs and source release/developer/publisher/genre metadata. A sample cover returned HTTP 200, image/webp, 14,944 bytes. No intermediary download host was contacted.
+
+The adapter defaults to 100 records per explicitly requested page. It saves source entries and the next-page cursor in Room; opening already supplied details requires no additional article request. The UI labels search/filter scope as saved listings, provides an explicit older-page button, and opens original articles for download links.
+
+Forty-five deterministic JVM provider/repository tests passed locally, including pagination, cursor persistence across repository reopening, deduplication without losing favorites, failed-page retry, empty responses and API/schema errors. Version-1 → version-2 → version-3 SQL migration checks preserved existing snapshots and added nullable page/count fields. The Android migration instrumentation test also checks cursor/count persistence after reopening; its CI result has not been inspected. No APK was built locally, and build monitoring remains with the user.

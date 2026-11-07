@@ -1,6 +1,6 @@
 # RetroShelf
 
-Native Android catalogue for community homebrew, built with Kotlin, Jetpack Compose / Material 3, MVVM, Coroutines / Flow, OkHttp, Gson, Jsoup, Coil and Room. No WebView is used. Original HTML/Java proof-of-concept files are preserved under `reference/` for design provenance and are not packaged in the APK.
+Native Android game catalogue browser, built with Kotlin, Jetpack Compose / Material 3, MVVM, Coroutines / Flow, OkHttp, Gson, Jsoup, Coil and Room. No WebView is used. Original HTML/Java proof-of-concept files are preserved under `reference/` for design provenance and are not packaged in the APK.
 
 ## Install without Android Studio
 
@@ -13,7 +13,8 @@ All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 
 ## What works
 
 - Twenty-one console categories grouped by manufacturer. Console → verified source → catalogue → game details navigation.
-- Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and separate **GameBrew homebrew** sources for GBA, Switch, Wii U, Wii and 3DS, with genre lists, gallery artwork and on-demand details. No fictional fallback entries.
+- Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and separate **GameBrew homebrew** sources for GBA, Switch, Wii U, Wii and 3DS.
+- **Switch → Switch catalogues → Ziperto** uses its public WordPress API, loading 100 listings per explicit page request with native artwork/details. Search, sort and filter apply to saved listings. Download links open the original article. No fictional fallback entries.
 - Per-source title/description/developer search, source genre/tag filtering, title/update/developer sorting, grid/list view, local paging, pull-to-refresh, error/retry states and offline cached results.
 - Details show available source description, screenshots, author, release metadata, license, file formats/sizes, and publisher links. Missing metadata is labelled rather than invented.
 - Persistent favorites and recently viewed games in Room. Saved catalogues and opened details retained until manual refresh/clear, image cache, provider toggles, dark/light theme and source attribution.
@@ -24,7 +25,7 @@ All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 
 
 See [adapter documentation](docs/ADAPTERS.md) for public endpoints, verification evidence and request limits. Universal-DB and the GBA upstream repository were reached on 2026-11-07. Homebrew Hub's direct API returned 403, so GBA uses the documented public repository. GB/GBC and other source integrations are not advertised as available. A first GBA sync may take a minute or more; later visits use Room cache. GitHub API rate-limit errors appear as source errors, with cached results available if previously loaded.
 
-Universal search is deferred: the Search tab chooses one enabled source/platform at a time. This avoids unnecessary requests to providers the user is not browsing. Direct download authorization is intentionally limited; homebrew labelling alone is insufficient evidence of asset rights. The app does not scrape protected pages, bypass DRM/payment/authentication, download commercial ROM catalogues, or automatically import files into emulators.
+Universal search is deferred: the Search tab chooses one enabled source/platform at a time. This avoids unnecessary requests to providers the user is not browsing. Direct download authorization is intentionally limited; homebrew labelling alone is insufficient evidence of asset rights. The app does not scrape protected pages, bypass DRM/payment/authentication, or automatically import files into emulators.
 
 ## Verification
 
@@ -47,3 +48,6 @@ Catalogues are saved in Room with **no time-based expiry**, including successful
 GameBrew detail pages are fetched once when opened and then saved without expiry. **Refresh game details** requests a fresh copy of that article. Opening a saved summary for the first time loads only that article, without refetching the catalogue. Refreshing a catalogue replaces its summaries, so an individual detail page may load again when next opened. No bulk detail crawl or background catalogue polling runs.
 
 Existing version-1 databases migrate without deleting favorites, history, downloads or catalogue entries. A saved empty catalogue is remembered across restarts. Clearing catalogue cache resets saved metadata while retaining bookmarks/history. Artwork remains governed by Coil's separate memory/disk cache; an evicted or uncached image can still require an image request.
+
+
+Ziperto's loaded pages and next-page cursor are saved without expiry. Use **Load older listings from website** to fetch another page; there is no automatic archive crawl. Pull-to-refresh starts its saved catalogue again from the latest page. Details supplied with listing pages are saved immediately, avoiding an extra request when opened. Original website links handle intermediary download hosts.

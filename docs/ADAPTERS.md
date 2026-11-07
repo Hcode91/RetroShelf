@@ -54,3 +54,17 @@ Local fixture attribution: `app/src/test/resources/GAMEBREW-LICENSE.md`. The par
 Switch and Wii U are registered console categories. Existing Wii and 3DS categories are reused; Universal-DB remains available alongside GameBrew for 3DS. Platform labels and provider IDs are passed into the shared parser so cached games, searches and favorites remain scoped correctly. Legitimate colons inside game titles are supported while MediaWiki administrative/file/template namespaces are excluded.
 
 The same public parse API and CC BY-SA attribution policy apply. One detail page per console and sample artwork were checked live. Missing screenshots are left empty. No new GameBrew binary has a direct-download grant. Catalogue tab fragments select website presentation only; they do not require extra API calls or a WebView.
+
+## Ziperto Switch listings
+
+Provider ID `ziperto` appears under **Switch → Switch catalogues**. Its public WordPress API and category 3534 were verified on 2026-11-07. The category reported 13,812 listings. `robots.txt` does not disallow the public category, media uploads or `/wp-json/` endpoints; restricted admin/plugin/login paths are not accessed. The AMP URL is a presentation variant; the adapter uses canonical HTTPS article URLs.
+
+The adapter requests `/wp-json/wp/v2/posts?categories=3534&per_page=100&page=1&orderby=date&order=desc&_fields=id,link,title,excerpt,content,modified_gmt`. It reads `X-WP-Total` and `X-WP-TotalPages`, loading only one page per explicit request. All source requests are serialized and paced at least one second apart. No whole-site crawl runs.
+
+`PagedGameProvider.fetchCataloguePage()` returns a `CatalogueBatch`; the repository saves normalized entries plus the next-page cursor and source listing count in Room. **Load older listings from website** explicitly requests another 100 records. Local search/sort/filter apply to saved records, which the UI labels accordingly. Reopening the source reuses saved entries and cursor without a request. Pull-to-refresh replaces the paged snapshot with the newest page; favorites/history survive. A version-2 → version-3 Room migration adds nullable pagination fields and preserves existing snapshots.
+
+The source provides article content within each listing page, so cover artwork, description, screenshots, original release/developer/publisher/genre metadata are normalized together and saved as opened-detail data. Opening one of those saved games does not request a second article. **Refresh game details** explicitly requests `/posts/{numeric-id}`. WordPress publication timestamps are not used as game release dates.
+
+Download links on the sample page lead to intermediary hosts. The adapter does not resolve them, follow protected download flows, or enqueue binaries. The user opens the original article in their browser for those links. No metadata license or publisher authorization is inferred from website availability. It is labelled as a Switch catalogue rather than homebrew.
+
+To add another paged adapter, implement `PagedGameProvider`, return page cursors/counts, register it, and add page-response fixtures plus repository tests for cache reuse, duplicate IDs, failed-page retry and cursor persistence. Avoid downloading every remote page at startup.

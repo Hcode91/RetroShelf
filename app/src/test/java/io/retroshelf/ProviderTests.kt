@@ -21,10 +21,11 @@ class ProviderTests {
     }
     @Test fun `registry advertises only supported consoles`() {
         val http = JsonHttp(JsonHttp.client())
-        val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http)) + GameBrewCatalogue.all.map { GameBrew(http, catalogue = it) })
+        val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http), Ziperto(http)) + GameBrewCatalogue.all.map { GameBrew(http, catalogue = it) })
         assertEquals(setOf("udb", "gamebrew-3ds"), registry.forConsole("3DS").map { it.id }.toSet())
         assertEquals(setOf("hub", "gamebrew"), registry.forConsole("GBA").map { it.id }.toSet())
         assertEquals("GameBrew homebrew", registry.get("gamebrew").section)
+        assertEquals(setOf("ziperto", "gamebrew-switch"), registry.forConsole("SWITCH").map { it.id }.toSet())
         assertTrue(registry.forConsole("PS2").isEmpty())
         assertEquals(21, Consoles.all.size)
     }

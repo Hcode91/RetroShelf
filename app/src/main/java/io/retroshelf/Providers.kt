@@ -33,17 +33,24 @@ class ProviderRegistry(val providers: List<GameProvider>) {
     fun forConsole(console: String) = providers.filter { console in it.supportedConsoles }
     fun get(id: String) = providers.first { it.id == id }
 }
+data class CatalogueBatch(val games: List<Game>, val nextPage: Int? = null, val total: Int? = null)
+interface PagedGameProvider : GameProvider {
+    suspend fun fetchCataloguePage(page: Int): CatalogueBatch
+}
+data class JsonResponse(val body: JsonElement, val headers: Headers)
 class JsonHttp(val client: OkHttpClient) {
-    suspend fun get(url: String): JsonElement = withContext(Dispatchers.IO) {
+    suspend fun get(url: String): JsonElement = response(url).body
+    suspend fun response(url: String): JsonResponse = withContext(Dispatchers.IO) {
         client.newCall(Request.Builder().url(url).header("User-Agent", "RetroShelf/0.2 (+https://github.com/Hcode91/RetroShelf)").build()).execute().use {
             if (!it.isSuccessful) throw IOException("Source returned HTTP ${it.code}. Try later or open its website.")
-            JsonParser.parseString(it.body?.string() ?: throw IOException("Empty response"))
+            JsonResponse(JsonParser.parseString(it.body?.string() ?: throw IOException("Empty response")), it.headers)
         }
     }
     companion object {
         fun client() = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).callTimeout(45, TimeUnit.SECONDS).build()
     }
 }
+
 fun JsonObject.str(key: String): String? = get(key)?.takeIf { it.isJsonPrimitive }?.asString?.takeIf { it.isNotBlank() }
 fun JsonObject.strings(key: String): List<String> = get(key)?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { it.takeIf { v -> v.isJsonPrimitive }?.asString } ?: emptyList()
 fun JsonObject.array(key: String): JsonArray = get(key)?.takeIf { it.isJsonArray }?.asJsonArray ?: JsonArray()
