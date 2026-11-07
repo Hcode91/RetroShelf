@@ -91,4 +91,12 @@ class GameBrewTests {
         }
     }
 
+    @Test fun `colons in game names are allowed while wiki namespaces are blocked`() {
+        assertTrue(GameBrewParser.validArticleTitle("GTA:_Chinatown_Wars_Switch"))
+        assertTrue(GameBrewParser.validArticleTitle("Talk"))
+        listOf("Special:RecentChanges", "File:cover.png", "Template:Games", "User_talk:Example", "Category:Games").forEach {
+            assertFalse(it, GameBrewParser.validArticleTitle(it))
+        }
+    }
+
 }

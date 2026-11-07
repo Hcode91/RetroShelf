@@ -301,7 +301,7 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
         item { OutlinedButton(onClick = vm::clearCatalogue) { Text("Clear catalogue cache") } }
         item { Text("Provider management", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> ToggleRow(p.name, p.id !in disabled) { vm.enable(p.id, it) } }
-        item { Text("About RetroShelf 0.2.2", style = MaterialTheme.typography.titleLarge); Text("A native browser for community homebrew. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
+        item { Text("About RetroShelf 0.2.3", style = MaterialTheme.typography.titleLarge); Text("A native browser for community homebrew. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
         item { Text("Source attribution", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> Column { Text(p.attribution, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { openWebsite(context, p.website) }) { Text("${p.name} ↗") } } }
         item { Text("Homebrew Hub API access could not be verified (HTTP 403). GBA uses its public upstream repository. GB/GBC integrations remain unavailable. Universal search is deferred; search each enabled catalogue using the Search tab.", style = MaterialTheme.typography.bodySmall) }

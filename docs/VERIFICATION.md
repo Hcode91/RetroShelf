@@ -38,3 +38,18 @@ APK and Android UI build outcomes for this revision are left to the user, who re
 Removed timed expiry from catalogue and opened-detail storage. Added persistent snapshot markers for empty catalogues, a version-1 → version-2 Room migration preserving existing data, an explicit detail-refresh button, and a saved-entry GameBrew detail path that does not reload the catalogue after restart.
 
 Twenty-one deterministic JVM provider/repository tests passed locally. Cache tests use the production repository with an in-memory DAO implementation; the local harness strips Room annotations from the DAO contract to compile without Android tooling. Tests cover old entries without network calls, empty-result persistence, explicit refresh/clear behavior, and article-only detail requests. Migration SQL was also executed against SQLite and preserved snapshot, favorite and history values. `CacheMigrationTest` adds actual Room upgrade/reopen coverage to the Android emulator workflow; that instrumentation result has not been inspected. No APK was built locally and no CI outcomes were monitored.
+
+## GameBrew platform expansion — 2026-11-07
+
+The production Kotlin parser processed the four public MediaWiki catalogue responses:
+
+| Console | Games | Genres | Entries with artwork URLs | Sample detail screenshots |
+| --- | ---: | ---: | ---: | ---: |
+| Switch | 405 | 15 | 405 | 2 |
+| Wii U | 35 | 10 | 35 | 0 |
+| Wii | 360 | 15 | 360 | 2 |
+| 3DS | 450 | 16 | 450 | 2 |
+
+Sample details were the respective Blockamok Remix articles. Wii U's article has no screenshot section, which is preserved as missing metadata. Sample artwork returned HTTP 200 / image/png: 29,005 bytes for the shared Switch/Wii U image, 29,023 bytes for Wii, and 17,721 bytes for 3DS. Shared artwork URLs were checked only once.
+
+Thirty-eight deterministic JVM provider/repository tests passed locally, including parameterized tests for each new platform's real catalogue/detail fixtures, selected-platform requests, scoped identifiers, cached catalogues, and article-only detail loading after restart. Tests also cover legitimate colon-containing game titles while excluding administrative wiki namespaces. No APK was built locally. Android build and emulator outcomes for this revision remain uninspected, as requested.

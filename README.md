@@ -12,8 +12,8 @@ All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 
 
 ## What works
 
-- Nineteen console categories grouped by manufacturer. Console → verified source → catalogue → game details navigation.
-- Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and a separate **GBA → GameBrew homebrew → GameBrew** source with genre lists, gallery artwork and on-demand details. No fictional fallback entries.
+- Twenty-one console categories grouped by manufacturer. Console → verified source → catalogue → game details navigation.
+- Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and separate **GameBrew homebrew** sources for GBA, Switch, Wii U, Wii and 3DS, with genre lists, gallery artwork and on-demand details. No fictional fallback entries.
 - Per-source title/description/developer search, source genre/tag filtering, title/update/developer sorting, grid/list view, local paging, pull-to-refresh, error/retry states and offline cached results.
 - Details show available source description, screenshots, author, release metadata, license, file formats/sizes, and publisher links. Missing metadata is labelled rather than invented.
 - Persistent favorites and recently viewed games in Room. Saved catalogues and opened details retained until manual refresh/clear, image cache, provider toggles, dark/light theme and source attribution.

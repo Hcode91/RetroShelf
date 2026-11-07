@@ -52,7 +52,7 @@ abstract class ShelfDatabase : RoomDatabase() {
 class AppGraph(context: Context) {
     val db = Room.databaseBuilder(context, ShelfDatabase::class.java, "retroshelf.db").addMigrations(ShelfDatabase.MIGRATION_1_2).build()
     val http = JsonHttp(JsonHttp.client())
-    val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http), GameBrew(http)))
+    val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http)) + GameBrewCatalogue.all.map { GameBrew(http, catalogue = it) })
     val repository = ShelfRepository(registry, db.shelf())
     val downloads = ShelfDownloads(context.applicationContext, db.shelf())
 }

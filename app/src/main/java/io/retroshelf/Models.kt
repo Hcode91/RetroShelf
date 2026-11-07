@@ -9,6 +9,7 @@ object Consoles {
         Console("NES", "NES", "Nintendo"), Console("SNES", "SNES", "Nintendo"), Console("N64", "Nintendo 64", "Nintendo"),
         Console("GB", "Game Boy", "Nintendo"), Console("GBC", "Game Boy Color", "Nintendo"), Console("GBA", "Game Boy Advance", "Nintendo"),
         Console("DS", "Nintendo DS", "Nintendo"), Console("3DS", "Nintendo 3DS", "Nintendo"), Console("GC", "GameCube", "Nintendo"), Console("WII", "Nintendo Wii", "Nintendo"),
+        Console("WIIU", "Nintendo Wii U", "Nintendo"), Console("SWITCH", "Nintendo Switch", "Nintendo"),
         Console("PS1", "PlayStation", "Sony"), Console("PS2", "PlayStation 2", "Sony"), Console("PSP", "PSP", "Sony"),
         Console("SMS", "Master System", "Sega"), Console("MD", "Mega Drive / Genesis", "Sega"), Console("DC", "Dreamcast", "Sega"),
         Console("AMIGA", "Commodore Amiga", "Other"), Console("ATARI", "Atari consoles", "Other"), Console("PC", "PC homebrew", "Other"))

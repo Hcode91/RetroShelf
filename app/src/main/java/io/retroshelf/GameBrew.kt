@@ -10,19 +10,38 @@ import org.jsoup.nodes.Element
 import java.io.IOException
 import java.net.URI
 
-/** Public MediaWiki parse API; no Cargo queries, protected endpoints or bulk detail crawling. */
-class GameBrew(private val http: JsonHttp, private val api: String = "https://www.gamebrew.org/api.php") : FeedProvider() {
-    override val id = "gamebrew"
-    override val name = "GameBrew"
+data class GameBrewCatalogue(val console: String, val page: String, val providerId: String) {
+    companion object {
+        val GBA = GameBrewCatalogue("GBA", "List_of_GBA_homebrew_games", "gamebrew")
+        val all = listOf(GBA,
+            GameBrewCatalogue("SWITCH", "List_of_Switch_homebrew_games", "gamebrew-switch"),
+            GameBrewCatalogue("WIIU", "List_of_Wii_U_homebrew_games", "gamebrew-wiiu"),
+            GameBrewCatalogue("WII", "List_of_Wii_homebrew_games", "gamebrew-wii"),
+            GameBrewCatalogue("3DS", "List_of_3DS_homebrew_games", "gamebrew-3ds"))
+    }
+}
+
+/** Public MediaWiki parse API; only the selected console is loaded. */
+class GameBrew(
+    private val http: JsonHttp,
+    private val api: String = "https://www.gamebrew.org/api.php",
+    val catalogue: GameBrewCatalogue = GameBrewCatalogue.GBA
+) : FeedProvider() {
+    override val id = catalogue.providerId
+    private val consoleName = Consoles.all.first { it.id == catalogue.console }.name
+    override val name = "GameBrew · $consoleName"
     override val section = "GameBrew homebrew"
-    override val description = "GBA homebrew games, genre lists and gallery artwork. Data from GameBrew (CC BY-SA 4.0). Live access verified 2026-11-07."
+    override val description = "$consoleName homebrew games, genre lists and gallery artwork. Data from GameBrew (CC BY-SA 4.0). Live access verified 2026-11-07."
     override val attribution = "Data from GameBrew contributors · CC BY-SA 4.0. Descriptions converted to plain text. Game files and artwork retain their authors' separate terms."
-    override val website = GameBrewParser.LIST
-    override val supportedConsoles = setOf("GBA")
+    override val website = "${GameBrewParser.ROOT}/wiki/${catalogue.page}"
+    override val supportedConsoles = setOf(catalogue.console)
     override val metadataLicenseUrl = "https://creativecommons.org/licenses/by-sa/4.0/"
     override val refreshDetails = true
-    private val requestLock = Mutex()
-    private var lastRequest = 0L
+    companion object {
+        // All GameBrew platforms share one request limit for the same website.
+        private val requestLock = Mutex()
+        private var lastRequest = 0L
+    }
     private suspend fun page(title: String): String = requestLock.withLock {
         val remaining = 1000 - (System.nanoTime() / 1_000_000 - lastRequest)
         if(remaining > 0) delay(remaining)
@@ -34,13 +53,13 @@ class GameBrew(private val http: JsonHttp, private val api: String = "https://ww
             GameBrewParser.response(http.get(url.toString()).asJsonObject)
         } finally { lastRequest = System.nanoTime() / 1_000_000 }
     }
-    override suspend fun load(): List<Game> = GameBrewParser.catalogue(page("List_of_GBA_homebrew_games"))
+    override suspend fun load(): List<Game> = GameBrewParser.catalogue(page(catalogue.page), catalogue.console, id)
     override suspend fun fetchGameDetails(id: String): Game {
         val summary = fetchGames().first { it.id == id }
         return fetchGameDetails(summary)
     }
     override suspend fun fetchGameDetails(game: Game): Game {
-        require(game.provider == id && game.id == "$id:${game.slug}" && game.slug.isNotBlank() && ':' !in game.slug) { "Invalid GameBrew entry" }
+        require(game.provider == id && game.id == "$id:${game.slug}" && GameBrewParser.validArticleTitle(game.slug) && game.consoles == listOf(catalogue.console)) { "Invalid GameBrew entry" }
         return GameBrewParser.details(page(game.slug), game)
     }
 }
@@ -54,13 +73,17 @@ object GameBrewParser {
             ?: throw IOException("GameBrew response format changed")
     }
     private fun url(value: String): String? = value.takeIf { it.isNotBlank() }?.let { runCatching { URI(ROOT).resolve(value).toString() }.getOrNull()?.takeIf(UrlSafety::valid) }
+    fun validArticleTitle(title: String): Boolean {
+        val namespaces = setOf("media", "special", "talk", "user", "user talk", "gamebrew", "gamebrew talk", "project", "project talk", "file", "file talk", "image", "image talk", "mediawiki", "mediawiki talk", "template", "template talk", "help", "help talk", "category", "category talk", "module", "module talk")
+        return title.isNotBlank() && (':' !in title || title.substringBefore(':').replace('_', ' ').lowercase(java.util.Locale.ROOT) !in namespaces)
+    }
     private fun article(value: String): String? = url(value)?.takeIf {
         val uri = URI(it)
         uri.host == "www.gamebrew.org" && uri.path.startsWith("/wiki/") &&
-            !uri.path.substringAfter("/wiki/").contains(':') && uri.rawQuery == null && uri.rawFragment == null
+            validArticleTitle(uri.path.substringAfter("/wiki/")) && uri.rawQuery == null && uri.rawFragment == null
     }
     private fun image(element: Element?): String? = element?.let { url(it.attr("src").ifBlank { it.attr("data-src") }) }
-    fun catalogue(html: String): List<Game> {
+    fun catalogue(html: String, console: String = "GBA", providerId: String = "gamebrew"): List<Game> {
         val doc = Jsoup.parse(html, ROOT)
         val tables = doc.select("table.cargoDynamicTable")
         if(tables.isEmpty()) throw IOException("GameBrew catalogue layout changed. Open the original website.")
@@ -86,7 +109,7 @@ object GameBrewParser {
                 val genres = listOfNotNull(genre?.takeIf { it.isNotBlank() })
                 val old = games[source]
                 games[source] = old?.copy(genres = (old.genres + genres).distinct()) ?: Game(
-                    "gamebrew:$slug", "gamebrew", slug, title, cells[1].text(), listOf("GBA"), source,
+                    "$providerId:$slug", providerId, slug, title, cells[1].text(), listOf(console), source,
                     artwork = artwork[source], developer = cells[3].text().takeIf { it.isNotBlank() },
                     updated = cells[4].text().takeIf { it.isNotBlank() }, genres = genres)
             }
@@ -122,7 +145,7 @@ object GameBrewParser {
         }
         return summary.copy(description = paragraphs.joinToString("\n\n").ifBlank { summary.description },
             artwork = image(info.selectFirst(".infobox-image img")) ?: summary.artwork,
-            screenshots = screenshots, developer = fields["author"] ?: summary.developer,
+            screenshots = screenshots, developer = fields["author"] ?: fields["authors"] ?: fields["author(s)"] ?: summary.developer,
             license = fields["license"], updated = fields["last updated"] ?: summary.updated,
             downloads = files, detailsFetchedAt = System.currentTimeMillis())
     }

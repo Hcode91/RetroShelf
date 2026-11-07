@@ -21,12 +21,12 @@ class ProviderTests {
     }
     @Test fun `registry advertises only supported consoles`() {
         val http = JsonHttp(JsonHttp.client())
-        val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http), GameBrew(http)))
-        assertEquals("udb", registry.forConsole("3DS").single().id)
+        val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http)) + GameBrewCatalogue.all.map { GameBrew(http, catalogue = it) })
+        assertEquals(setOf("udb", "gamebrew-3ds"), registry.forConsole("3DS").map { it.id }.toSet())
         assertEquals(setOf("hub", "gamebrew"), registry.forConsole("GBA").map { it.id }.toSet())
         assertEquals("GameBrew homebrew", registry.get("gamebrew").section)
         assertTrue(registry.forConsole("PS2").isEmpty())
-        assertEquals(19, Consoles.all.size)
+        assertEquals(21, Consoles.all.size)
     }
     @Test fun `real universal fixture normalized with reviewed distribution grant`() {
         val g = game()

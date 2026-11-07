@@ -27,9 +27,9 @@ Sources:
 - https://github.com/gbadev-org/games
 - https://github.com/0rientd/2048-port-3ds/blob/main/LICENSE
 
-## GameBrew GBA homebrew
+## GameBrew homebrew
 
-`GameBrew` is registered independently as provider `gamebrew`, under the dedicated **GameBrew homebrew** section of the GBA source screen. Search, filters, favorites, recent history and provider management use the existing shared UI.
+`GameBrew` is configured per console and appears under each console's dedicated **GameBrew homebrew** section. The existing GBA ID remains `gamebrew`, preserving saved entries and favorites. Additional provider IDs are `gamebrew-switch`, `gamebrew-wiiu`, `gamebrew-wii` and `gamebrew-3ds`. Search, filters, favorites, recent history and provider management use the existing shared UI.
 
 Catalogue: the public MediaWiki API at `https://www.gamebrew.org/api.php?action=parse&page=List_of_GBA_homebrew_games&prop=text&format=json&formatversion=2&maxlag=5`. Jsoup combines rendered catalogue tables (title, description, author, genre, updated date) with gallery images, deduplicating by article URL and preserving multiple genre memberships. The Gallery View URL fragment selects a website tab; it is not a separate catalogue endpoint.
 
@@ -37,6 +37,20 @@ Details: the same API parses an individual article only when the user opens it. 
 
 Access checked 2026-11-07: `robots.txt` permits general access and search/reference reuse, while disallowing named training crawlers and certain wiki namespaces. This adapter does not access those namespaces. The website footer licenses wiki content under CC BY-SA 4.0 unless otherwise noted. In-app attribution links the source article and metadata license and identifies plain-text conversion. Artwork and game binaries retain their own terms. Arbitrary Cargo queries returned `permissiondenied`; the adapter uses the accessible public parse API, with no authentication/challenge bypass.
 
-At most one GameBrew API request at a time, separated by at least one second. `maxlag=5` respects MediaWiki load; API errors and HTTP restrictions fail normally. Catalogues and enriched details are saved without time expiry. Pull-to-refresh replaces the catalogue; Refresh game details updates an article. The repository passes the saved entry to the detail adapter, so first-time detail loading after restart does not request the catalogue again. The adapter never crawls all detail pages during catalogue loading. No GameBrew binary currently has a direct-download authorization grant; users open its original article for downloads.
+All GameBrew console adapters share a single request limiter: at most one API request at a time, separated by at least one second. Each adapter loads only its own catalogue, has an independent persistent cache and can be enabled/disabled independently. `maxlag=5` respects MediaWiki load; API errors and HTTP restrictions fail normally. Catalogues and enriched details are saved without time expiry. Pull-to-refresh replaces the catalogue; Refresh game details updates an article. The repository passes the saved entry to the detail adapter, so first-time detail loading after restart does not request the catalogue again. The adapter never crawls all detail pages during catalogue loading. No GameBrew binary currently has a direct-download authorization grant; users open its original article for downloads.
 
 Local fixture attribution: `app/src/test/resources/GAMEBREW-LICENSE.md`. The parser/provider tests exercise real response excerpts, duplicate entries, unsafe article links, missing layouts, empty results, metadata normalization, API errors, request encoding, catalogue caching and on-demand details.
+
+
+### Additional verified GameBrew catalogues
+
+| Console | API page parameter | Provider ID | Verified games (2026-11-07) |
+| --- | --- | --- | ---: |
+| Switch | `List_of_Switch_homebrew_games` | `gamebrew-switch` | 405 |
+| Wii U | `List_of_Wii_U_homebrew_games` | `gamebrew-wiiu` | 35 |
+| Wii | `List_of_Wii_homebrew_games` | `gamebrew-wii` | 360 |
+| 3DS | `List_of_3DS_homebrew_games` | `gamebrew-3ds` | 450 |
+
+Switch and Wii U are registered console categories. Existing Wii and 3DS categories are reused; Universal-DB remains available alongside GameBrew for 3DS. Platform labels and provider IDs are passed into the shared parser so cached games, searches and favorites remain scoped correctly. Legitimate colons inside game titles are supported while MediaWiki administrative/file/template namespaces are excluded.
+
+The same public parse API and CC BY-SA attribution policy apply. One detail page per console and sample artwork were checked live. Missing screenshots are left empty. No new GameBrew binary has a direct-download grant. Catalogue tab fragments select website presentation only; they do not require extra API calls or a WebView.

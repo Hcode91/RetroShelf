@@ -5,3 +5,13 @@
 `gamebrew-details.json` is the public parse response for [Minicraft GBA](https://www.gamebrew.org/wiki/Minicraft_GBA), retrieved 2026-11-07.
 
 Text/metadata copyright GameBrew contributors; licensed under [Creative Commons Attribution-ShareAlike 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/), as stated in GameBrew's page footer. These fixtures and their adaptations remain under that license. Refer to the linked pages and their revision histories for contributor attribution. Image and binary URLs are references only; no artwork or game binaries are bundled in these fixtures.
+
+
+Additional fixtures retrieved 2026-11-07 (same GameBrew-contributors / CC BY-SA 4.0 attribution and license):
+
+- `gamebrew-switch-catalogue.html`: excerpt from [Switch games](https://www.gamebrew.org/wiki/List_of_Switch_homebrew_games); `gamebrew-switch-details.html`: rendered [Blockamok Remix Switch](https://www.gamebrew.org/wiki/Blockamok_Remix_Switch) article.
+- `gamebrew-wiiu-catalogue.html`: excerpt from [Wii U games](https://www.gamebrew.org/wiki/List_of_Wii_U_homebrew_games); `gamebrew-wiiu-details.html`: rendered [Blockamok Remix Wii U](https://www.gamebrew.org/wiki/Blockamok_Remix_Wii_U) article.
+- `gamebrew-wii-catalogue.html`: excerpt from [Wii games](https://www.gamebrew.org/wiki/List_of_Wii_homebrew_games); `gamebrew-wii-details.html`: rendered [Blockamok Remix Wii](https://www.gamebrew.org/wiki/Blockamok_Remix_Wii) article.
+- `gamebrew-3ds-catalogue.html`: excerpt from [3DS games](https://www.gamebrew.org/wiki/List_of_3DS_homebrew_games); `gamebrew-3ds-details.html`: rendered [Blockamok Remix 3DS](https://www.gamebrew.org/wiki/Blockamok_Remix_3DS) article.
+
+Catalogue excerpts retain the first two Action records plus the Blockamok Remix record/gallery entry where needed, with simplified surrounding markup. Detail HTML comes from the public parse API. Wiki descriptions are preserved even where article text differs between platforms; no inferred corrections or substitute screenshots are added.
