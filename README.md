@@ -30,7 +30,7 @@ Universal search is deferred: the Search tab chooses one enabled source/platform
 
 `gradle :app:testDebugUnitTest :app:lintDebug` is executed in Actions. Tests use checked-in real-response fixtures and MockWebServer, covering console/provider filtering, normalization, search/sort/paging/empty results, malformed source data, HTML description conversion, caching/favorites/recent behavior, HTTP failures and unsafe download URLs. `tools/provider-smoke.py` is an optional manual live check, excluded from unit tests.
 
-On-device checks: rotate Home and a catalogue; search “2048” on 3DS; open details, favorite it and relaunch; download its reviewed `.3dsx`, observe Downloads/notifications, save a copy to a chosen document destination; disable network and refresh a cached catalogue; verify that a fresh uncached provider shows a retry error. No emulator/hardware execution result should be inferred from unit tests.
+On-device checks: rotate Home and a catalogue; search “2048” on 3DS; open details, favorite it and relaunch; download its reviewed `.3dsx`, observe Downloads/notifications, save a copy to a chosen document destination; disable network and refresh a cached catalogue; verify that a fresh uncached provider shows a retry error. The companion Android device workflow runs an offline emulator smoke test and uploads screenshots. See [verification record](docs/VERIFICATION.md) for its scope and remaining hardware checks.
 
 ## Add a website
 

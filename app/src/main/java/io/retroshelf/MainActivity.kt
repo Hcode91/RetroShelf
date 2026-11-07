@@ -90,7 +90,7 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
 }
 @Composable private fun HomeScreen(vm: ShelfViewModel, nav: NavHostController) {
     val recent by vm.recent.collectAsStateWithLifecycle()
-    LazyVerticalGrid(columns = GridCells.Adaptive(160.dp), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyVerticalGrid(columns = GridCells.Adaptive(148.dp), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) { Intro("Small games.\nNew worlds.", "Choose a console, discover a community source, and build your shelf.") }
         Consoles.all.groupBy { it.family }.forEach { (family, consoles) ->
             item(span = { GridItemSpan(maxLineSpan) }) { Text(family, Modifier.padding(top = 12.dp), style = MaterialTheme.typography.titleLarge) }
@@ -153,17 +153,16 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
             Text(vm.graph.registry.get(provider).name, style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(search, { search = it }, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Search this catalogue") }, leadingIcon = { Icon(Icons.Default.Search, null) })
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Choice("Sort: ${sort.name.lowercase()}", Sort.entries.map { it.name }) { sort = Sort.valueOf(it) }
+                Box(Modifier.weight(1f)) { Choice("Sort: ${sort.name.lowercase()}", Sort.entries.map { it.name }) { sort = Sort.valueOf(it) } }
                 Spacer(Modifier.width(8.dp))
-                Choice(if(genre.isBlank()) "All genres" else genre, listOf("All genres") + state.games.filter { console in it.consoles }.flatMap { it.genres }.distinct().sorted()) { genre = if(it == "All genres") "" else it }
-                Spacer(Modifier.weight(1f))
+                Box(Modifier.weight(1f)) { Choice(if(genre.isBlank()) "All genres" else genre, listOf("All genres") + state.games.filter { console in it.consoles }.flatMap { it.genres }.distinct().sorted()) { genre = if(it == "All genres") "" else it } }
                 IconButton(onClick = { list = !list }) { Icon(if(list) Icons.Default.GridView else Icons.Default.ViewList, if(list) "Show grid" else "Show list") }
             }
             if(state.offline) Text("Offline · showing saved catalogue. Pull to retry.", color = MaterialTheme.colorScheme.tertiary)
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error); Button(onClick = { vm.load(provider, true) }) { Text("Retry") } }
         }
         PullToRefreshBox(isRefreshing = state.loading, onRefresh = { page = 0; vm.load(provider, true) }, modifier = Modifier.weight(1f)) {
-            LazyVerticalGrid(columns = if(list) GridCells.Fixed(1) else GridCells.Adaptive(160.dp), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyVerticalGrid(columns = if(list) GridCells.Fixed(1) else GridCells.Adaptive(148.dp), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if(state.loading) item(span = { GridItemSpan(maxLineSpan) }) { EmptyState("Connecting to catalogue", "The first GBA repository sync can take a minute. Subsequent visits use the local cache.") }
                 if(!state.loading && state.error == null && visible.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { EmptyState("No games found", "Try another search, filter, or source.") }
                 items(visible, key = { it.id }) { game -> GameCard(game, list) { openGame(game, vm, nav) } }
@@ -199,7 +198,7 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
 }
 @Composable private fun EmptyState(title: String, description: String) { Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(title, style = MaterialTheme.typography.titleLarge); Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
 @Composable private fun GameCollection(title: String, games: List<Game>, empty: String, onClick: (Game) -> Unit) {
-    LazyVerticalGrid(GridCells.Adaptive(160.dp), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyVerticalGrid(GridCells.Adaptive(148.dp), contentPadding = PaddingValues(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) { Text(title, style = MaterialTheme.typography.headlineMedium) }
         if(games.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { EmptyState("Your shelf is empty", empty) }
         items(games, key = { it.id }) { g -> GameCard(g, false) { onClick(g) } }
