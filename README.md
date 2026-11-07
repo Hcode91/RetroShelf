@@ -1,43 +1,41 @@
-# RetroShelf • Android proof of concept
+# RetroShelf
 
-RetroShelf is an **experimental multi-console game-catalogue UI** that shows game artwork, descriptions, and original download links without showing whole websites. It does not ship games or copyrighted ROMs. All sample games in preview mode are **fictional** and cannot be downloaded.
+Native Android catalogue for community homebrew, built with Kotlin, Jetpack Compose / Material 3, MVVM, Coroutines / Flow, OkHttp, Gson, Jsoup, Coil and Room. No WebView is used. Original HTML/Java proof-of-concept files are preserved under `reference/` for design provenance and are not packaged in the APK.
 
-## Try it on any phone or desktop without building an APK
+## Install without Android Studio
 
-Open `app/src/main/assets/index.html` directly in a browser (or use the separate `RetroShelf_POC.html` file). Select a console. The page tries to load live homebrew metadata.
+1. Open [Build RetroShelf Android APK](https://github.com/Hcode91/RetroShelf/actions/workflows/android-debug.yml).
+2. Choose a successful run on `feature/native-android` (or `main` after merging the PR).
+3. Download **RetroShelf-debug-apk** under Artifacts, unzip, and open `app-debug.apk` on an Android 10+ device. Android may ask you to allow installation from the app opening the APK.
 
-### Supported live adapters
+All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 8.13 and Android SDK 36, executes unit tests and Android lint, builds the debug APK, and uploads verification reports plus the APK. `workflow_dispatch` becomes available in the Actions UI after the workflow is on the default branch; pushes and PRs build the feature branch immediately. Artifacts expire after 30 days; rerun the workflow to recreate them. No signing secrets are needed for debug builds.
 
-- Game Boy, Game Boy Color, Game Boy Advance: [Homebrew Hub](https://github.com/gbdev/homebrewhub/blob/main/API.md) search API (`/api/search`).
-- Nintendo DS, Nintendo 3DS: [Universal-DB](https://db.universal-team.net/) public `full.json` feed.
+## What works
 
-Live catalogue results require internet access and cross-origin access permitted by the source website. Homebrew Hub's live endpoint wasn't reachable from the development environment, so its browser integration has not been verified. For any network/CORS/API failure, clearly labelled fictional demo entries appear and downloads are **disabled**. In a production app, replace fragile website scraping with authorised APIs or a controlled backend adapter, with permission from sites and publishers where appropriate.
+- Nineteen console categories grouped by manufacturer. Console → verified source → catalogue → game details navigation.
+- Universal-DB DS/3DS games and Homebrew Hub's official GBA repository, using actual metadata and artwork. No fictional fallback entries.
+- Per-source title/description/developer search, source genre/tag filtering, title/update/developer sorting, grid/list view, local paging, pull-to-refresh, error/retry states and offline cached results.
+- Details show available source description, screenshots, author, release metadata, license, file formats/sizes, and publisher links. Missing metadata is labelled rather than invented.
+- Persistent favorites and recently viewed games in Room. Six-hour catalogue cache, image cache, provider toggles, dark/light theme and source attribution.
+- Android DownloadManager progress, completion notifications, cancel, failure history and retry. Public Downloads/RetroShelf or app storage; a completed download can be copied to a user-selected Storage Access Framework destination. Files are never installed or executed.
+- Direct downloads are limited to individually reviewed distributions. The MIT-licensed 2048 3DS port is initially enabled; unreviewed catalogue files display the source website instead.
 
-## Build an Android APK using GitHub Actions (no local build required)
+## Source verification and limitations
 
-1. Create a new GitHub repository.
-2. Upload the **contents** of this folder into the repo root (including the hidden `.github` directory).
-3. In the repository's **Actions** tab, choose **Build RetroShelf Android APK** → **Run workflow** (or push a commit).
-4. Open the completed workflow run and download the `RetroShelf-debug-apk` artifact.
-5. Unzip the artifact, then install `app-debug.apk` on your phone after reviewing Android's install warnings.
+See [adapter documentation](docs/ADAPTERS.md) for public endpoints, verification evidence and request limits. Universal-DB and the GBA upstream repository were reached on 2026-11-07. Homebrew Hub's direct API returned 403, so GBA uses the documented public repository. GB/GBC and other source integrations are not advertised as available. A first GBA sync may take a minute or more; later visits use Room cache. GitHub API rate-limit errors appear as source errors, with cached results available if previously loaded.
 
-The APK is only a debug proof of concept, not a signed Play Store release. The build workflow has **not** been run here because the build environment cannot reach Google's dependencies. Target: Android 10+ (min SDK 29).
+Universal search is deferred: the Search tab chooses one enabled source/platform at a time. This avoids unnecessary requests to providers the user is not browsing. Direct download authorization is intentionally limited; homebrew labelling alone is insufficient evidence of asset rights. The app does not scrape protected pages, bypass DRM/payment/authentication, download commercial ROM catalogues, or automatically import files into emulators.
 
-## Implementation
+## Verification
 
-- Android WebView loads the HTML locally through a controlled HTTPS-like origin using WebViewClient interception.
-- `fetch()` loads public metadata from selected third-party sources.
-- Each source has its own normalisation adapter and maps records into common `{title, author, description, image, downloads}` objects.
-- When a user taps a downloadable file, Android's `DownloadManager` saves the original source URL into Downloads; the app does not host files or bypass access controls.
-- Visit-source links open in a browser.
-- Search, A–Z sorting, author sorting, detail screens, and a responsive layout are included.
+`gradle :app:testDebugUnitTest :app:lintDebug` is executed in Actions. Tests use checked-in real-response fixtures and MockWebServer, covering console/provider filtering, normalization, search/sort/paging/empty results, malformed source data, HTML description conversion, caching/favorites/recent behavior, HTTP failures and unsafe download URLs. `tools/provider-smoke.py` is an optional manual live check, excluded from unit tests.
 
-## Limitations / next steps
+On-device checks: rotate Home and a catalogue; search “2048” on 3DS; open details, favorite it and relaunch; download its reviewed `.3dsx`, observe Downloads/notifications, save a copy to a chosen document destination; disable network and refresh a cached catalogue; verify that a fresh uncached provider shows a retry error. No emulator/hardware execution result should be inferred from unit tests.
 
-- Source sites may change their feed schemas, restrict CORS, rate-limit requests, or prohibit automated retrieval. Treat all integrations as provisional until individually tested and authorised.
-- Homebrew Hub pagination and JSON field naming were implemented from its public documentation, but have not been end-to-end verified.
-- The HTML preview isn't proof the native APK is buildable until GitHub Actions succeeds.
-- Before public release, implement domain allowlisting, content-safety filtering, appropriate trademarks/attribution, a proper repository permission audit, checksums where available, download progress, storage import, and a privacy policy.
-- No scraping/login bypasses, paywall evasion, or commercial ROM discovery are implemented.
+## Add a website
 
-This proof of concept deliberately links only to homebrew data sources; it does not provide piracy-oriented catalogues.
+Implement `GameProvider`, normalize data into `Game`, register it in `AppGraph`, add response fixtures and pass verification before enabling it. The catalogue UI requires no changes. Full instructions: [docs/ADAPTERS.md](docs/ADAPTERS.md).
+
+## Signed releases later
+
+Create an upload keystore outside the repository. Store its base64 bytes, store password, alias and key password as GitHub Actions encrypted secrets. In a separate release workflow, decode the keystore into the runner's temporary directory and pass secret values through environment variables into an Android release signing configuration. Run tests/lint, build `assembleRelease`/`bundleRelease`, and upload signed artifacts. Never commit keystores, passwords or populated `local.properties`. Back up the release key securely; it is required to update installed release builds. Debug and release signatures are different.
