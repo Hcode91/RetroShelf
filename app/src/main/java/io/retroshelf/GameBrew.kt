@@ -17,7 +17,11 @@ data class GameBrewCatalogue(val console: String, val page: String, val provider
             GameBrewCatalogue("SWITCH", "List_of_Switch_homebrew_games", "gamebrew-switch"),
             GameBrewCatalogue("WIIU", "List_of_Wii_U_homebrew_games", "gamebrew-wiiu"),
             GameBrewCatalogue("WII", "List_of_Wii_homebrew_games", "gamebrew-wii"),
-            GameBrewCatalogue("3DS", "List_of_3DS_homebrew_games", "gamebrew-3ds"))
+            GameBrewCatalogue("3DS", "List_of_3DS_homebrew_games", "gamebrew-3ds"),
+            GameBrewCatalogue("DS", "List_of_DS_homebrew_games", "gamebrew-ds"),
+            GameBrewCatalogue("GB", "List_of_GB_homebrew_games", "gamebrew-gb"),
+            GameBrewCatalogue("VITA", "List_of_Vita_homebrew_games", "gamebrew-vita"),
+            GameBrewCatalogue("PSP", "List_of_PSP_homebrew_games", "gamebrew-psp"))
     }
 }
 
@@ -34,7 +38,7 @@ class GameBrew(
     override val description = "$consoleName homebrew games, genre lists and gallery artwork. Data from GameBrew (CC BY-SA 4.0). Live access verified 2026-11-07."
     override val attribution = "Data from GameBrew contributors · CC BY-SA 4.0. Descriptions converted to plain text. Game files and artwork retain their authors' separate terms."
     override val website = "${GameBrewParser.ROOT}/wiki/${catalogue.page}"
-    override val supportedConsoles = setOf(catalogue.console)
+    override val supportedConsoles = if(catalogue.console == "GB") setOf("GB", "GBC") else setOf(catalogue.console)
     override val metadataLicenseUrl = "https://creativecommons.org/licenses/by-sa/4.0/"
     override val refreshDetails = true
     companion object {
@@ -59,7 +63,7 @@ class GameBrew(
         return fetchGameDetails(summary)
     }
     override suspend fun fetchGameDetails(game: Game): Game {
-        require(game.provider == id && game.id == "$id:${game.slug}" && GameBrewParser.validArticleTitle(game.slug) && game.consoles == listOf(catalogue.console)) { "Invalid GameBrew entry" }
+        require(game.provider == id && game.id == "$id:${game.slug}" && GameBrewParser.validArticleTitle(game.slug) && game.consoles.isNotEmpty() && game.consoles.all { it in supportedConsoles }) { "Invalid GameBrew entry" }
         return GameBrewParser.details(page(game.slug), game)
     }
 }
@@ -99,19 +103,27 @@ object GameBrewParser {
                 while(previous != null && previous.tagName() !in listOf("h2", "h3")) previous = previous.previousElementSibling()
                 previous?.selectFirst(".mw-headline")?.text()
             }
+            val headers = table.selectFirst("thead tr")?.children()?.map { it.text().lowercase().replace(Regex("[^a-z]"), "") }.orEmpty()
+            fun column(names: Set<String>, fallback: Int): Int = headers.indexOfFirst { it in names }.takeIf { it >= 0 } ?: fallback
             for(row in table.select("tbody > tr")) {
                 val cells = row.children().filter { it.tagName() == "td" }
                 if(cells.size < 5) continue
-                val link = cells[0].selectFirst("a[href]") ?: continue
+                val link = cells.getOrNull(column(setOf("title", "name"), 0))?.selectFirst("a[href]") ?: continue
                 val source = article(link.attr("href")) ?: continue
                 val title = link.text().trim().takeIf { it.isNotBlank() } ?: continue
                 val slug = URI(source).path.substringAfter("/wiki/")
                 val genres = listOfNotNull(genre?.takeIf { it.isNotBlank() })
+                val system = cells.getOrNull(column(setOf("system"), -1))?.text()?.uppercase().orEmpty()
+                val consoles = if(console != "GB") listOf(console) else when {
+                    system.contains("DMG") && system.contains("CGB") -> listOf("GB", "GBC")
+                    system == "CGB" || system == "GBC" -> listOf("GBC")
+                    else -> listOf("GB")
+                }
                 val old = games[source]
-                games[source] = old?.copy(genres = (old.genres + genres).distinct()) ?: Game(
-                    "$providerId:$slug", providerId, slug, title, cells[1].text(), listOf(console), source,
-                    artwork = artwork[source], developer = cells[3].text().takeIf { it.isNotBlank() },
-                    updated = cells[4].text().takeIf { it.isNotBlank() }, genres = genres)
+                games[source] = old?.copy(genres = (old.genres + genres).distinct(), consoles = (old.consoles + consoles).distinct()) ?: Game(
+                    "$providerId:$slug", providerId, slug, title, cells.getOrNull(column(setOf("description"), 1))?.text().orEmpty(), consoles, source,
+                    artwork = artwork[source], developer = cells.getOrNull(column(setOf("author", "authors", "developer", "developers"), cells.size-2))?.text()?.takeIf { it.isNotBlank() },
+                    updated = cells.getOrNull(column(setOf("updated", "lastupdated"), cells.size-1))?.text()?.takeIf { it.isNotBlank() }, genres = genres)
             }
         }
         if(games.isEmpty() && tables.any { it.select("tbody > tr > td").isNotEmpty() }) throw IOException("GameBrew catalogue rows could not be read")

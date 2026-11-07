@@ -12,8 +12,8 @@ All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 
 
 ## What works
 
-- Twenty-one console categories grouped by manufacturer. Console → verified source → catalogue → game details navigation.
-- Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and separate **GameBrew homebrew** sources for GBA, Switch, Wii U, Wii and 3DS.
+- Twenty-four console categories grouped by manufacturer. Console → verified source → catalogue → game details navigation.
+- Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and separate **GameBrew homebrew** sources for GBA, Switch, Wii U, Wii, 3DS, DS, Game Boy/Color, PS Vita and PSP.
 - **Switch → Switch catalogues → Ziperto** uses its public WordPress API, loading 100 listings per explicit page request with native artwork/details. Search, sort and filter apply to saved listings. Download links open the original article. No fictional fallback entries.
 - Per-source title/description/developer search, source genre/tag filtering, title/update/developer sorting, grid/list view, local paging, pull-to-refresh, error/retry states and offline cached results.
 - Details show available source description, screenshots, author, release metadata, license, file formats/sizes, and publisher links. Missing metadata is labelled rather than invented.
@@ -23,7 +23,7 @@ All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 
 
 ## Source verification and limitations
 
-See [adapter documentation](docs/ADAPTERS.md) for public endpoints, verification evidence and request limits. Universal-DB and the GBA upstream repository were reached on 2026-11-07. Homebrew Hub's direct API returned 403, so GBA uses the documented public repository. GB/GBC and other source integrations are not advertised as available. A first GBA sync may take a minute or more; later visits use Room cache. GitHub API rate-limit errors appear as source errors, with cached results available if previously loaded.
+See [adapter documentation](docs/ADAPTERS.md) for public endpoints, verification evidence and request limits. Universal-DB and the GBA upstream repository were reached on 2026-11-07. Homebrew Hub's direct API returned 403, so GBA uses the documented public repository. Game Boy/Color now uses GameBrew; additional unregistered sources are not advertised as available. A first GBA sync may take a minute or more; later visits use Room cache. GitHub API rate-limit errors appear as source errors, with cached results available if previously loaded.
 
 Universal search is deferred: the Search tab chooses one enabled source/platform at a time. This avoids unnecessary requests to providers the user is not browsing. Direct download authorization is intentionally limited; homebrew labelling alone is insufficient evidence of asset rights. The app does not scrape protected pages, bypass DRM/payment/authentication, or automatically import files into emulators.
 
@@ -51,3 +51,14 @@ Existing version-1 databases migrate without deleting favorites, history, downlo
 
 
 Ziperto's loaded pages and next-page cursor are saved without expiry. Use **Load older listings from website** to fetch another page; there is no automatic archive crawl. Pull-to-refresh starts its saved catalogue again from the latest page. Details supplied with listing pages are saved immediately, avoiding an extra request when opened. Original website links handle intermediary download hosts.
+
+
+## Additional source sections
+
+- **PC games → RPGMaker**: RPGMaker.net's paged public catalogue and the Internet Archive RPGMaker.net collection. Both are native listings with saved pages and on-demand metadata.
+- **Switch → Switch catalogues**: NXbrew joins Ziperto. NXbrew's category mixes Switch and Switch 2 records; explicit Switch 2-only records are filtered out of Switch browsing.
+- **DS / Game Boy / PS Vita / PSP → GameBrew homebrew**: native catalogue adapters. Game Boy's System column distinguishes DMG and CGB records; Color-only entries appear under Game Boy Color, using the same saved source without another fetch.
+- **PS4 → PS4 catalogues → SuperPSX**: native permitted HTML listings/details; its restricted API is not used.
+- **PC games → PC catalogues → SteamRIP** and **PS3 → PS3 catalogues → NoPayStation**: clearly labelled browser links. Their general robots policies disallow automated indexing, so the app does not scrape catalogues or pretend native data is available. Browser-only sources are excluded from native Search.
+
+Source pages and original download links open in the device browser. New catalogue adapters do not install games, extract license keys, or follow protected download flows. All saved entries retain the manual-refresh-only policy. See `docs/ADAPTERS.md` for access evidence and limitations.

@@ -115,18 +115,19 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
     val providers = vm.graph.registry.forConsole(console)
     val disabled by vm.disabled.collectAsStateWithLifecycle()
     val statuses by vm.status.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { Intro(Consoles.all.first { it.id == console }.name, "Choose a source website") }
         if(providers.isEmpty()) item { EmptyState("No supported source yet", "This console is registered. A verified, authorized provider can be added through the adapter interface.") }
         providers.groupBy { it.section }.forEach { (section, sources) ->
             item { Text(section, style = MaterialTheme.typography.titleLarge) }
             items(sources) { p ->
-                ElevatedCard(onClick = { if(p.id !in disabled) nav.navigate("catalogue/$console/${p.id}") }) {
+                ElevatedCard(onClick = { if(p.id !in disabled) { if(p.nativeBrowsing) nav.navigate("catalogue/$console/${p.id}") else openWebsite(context, p.website) } }) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary)
                         Text(p.name, style = MaterialTheme.typography.titleLarge); Text(p.description)
                         Text("Platforms: ${p.supportedConsoles.joinToString()}", style = MaterialTheme.typography.labelLarge)
-                        Text(if(p.id in disabled) "Disabled in Settings" else statuses[p.id] ?: "Live access verified · tap to connect", color = MaterialTheme.colorScheme.secondary)
+                        Text(if(p.id in disabled) "Disabled in Settings" else statuses[p.id] ?: p.connectionHint, color = MaterialTheme.colorScheme.secondary)
                     }
                 }
             }
@@ -263,7 +264,7 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
 }
 @Composable private fun SearchScreen(vm: ShelfViewModel, nav: NavHostController) {
     val disabled by vm.disabled.collectAsStateWithLifecycle()
-    val choices = vm.graph.registry.providers.filter { it.id !in disabled }.flatMap { p -> p.supportedConsoles.map { c -> Triple("${p.name} · $c", c, p.id) } }
+    val choices = vm.graph.registry.providers.filter { it.id !in disabled && it.nativeBrowsing }.flatMap { p -> p.supportedConsoles.map { c -> Triple("${p.name} · $c", c, p.id) } }
     var selection by rememberSaveable { mutableStateOf("") }
     val picked = choices.firstOrNull { it.first == selection } ?: choices.firstOrNull()
     Column { if(picked != null) { Choice(picked.first, choices.map { it.first }) { selection = it }; CatalogueScreen(picked.second, picked.third, vm, nav) } else EmptyState("No enabled providers", "Enable a provider in Settings to search its catalogue.") }
@@ -307,10 +308,10 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
         item { OutlinedButton(onClick = vm::clearCatalogue) { Text("Clear catalogue cache") } }
         item { Text("Provider management", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> ToggleRow(p.name, p.id !in disabled) { vm.enable(p.id, it) } }
-        item { Text("About RetroShelf 0.2.4", style = MaterialTheme.typography.titleLarge); Text("A native browser for game catalogues. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
+        item { Text("About RetroShelf 0.3.0", style = MaterialTheme.typography.titleLarge); Text("A native browser for game catalogues. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
         item { Text("Source attribution", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> Column { Text(p.attribution, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { openWebsite(context, p.website) }) { Text("${p.name} ↗") } } }
-        item { Text("Homebrew Hub API access could not be verified (HTTP 403). GBA uses its public upstream repository. GB/GBC integrations remain unavailable. Universal search is deferred; search each enabled catalogue using the Search tab.", style = MaterialTheme.typography.bodySmall) }
+        item { Text("Homebrew Hub API access could not be verified (HTTP 403). GBA uses its public upstream repository. Game Boy and Game Boy Color homebrew use GameBrew. Universal search is deferred; search each enabled catalogue using the Search tab.", style = MaterialTheme.typography.bodySmall) }
     }
 }
 @Composable private fun ToggleRow(title: String, value: Boolean, onChange: (Boolean) -> Unit) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(title, Modifier.weight(1f)); Switch(value, onChange) } }

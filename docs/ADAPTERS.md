@@ -2,9 +2,9 @@
 
 1. Investigate the publisher's documented API/feed, repository license and access policy. Prefer structured data; do not scrape protected pages. Verify a real catalogue, details, artwork and source links. Record the verification date and any access restrictions.
 2. Implement `GameProvider` in `Providers.kt` (or a new package). Supply a stable ID, name, description, attribution URL and explicit supported console IDs from `Consoles.all`.
-3. Implement `fetchGames(refresh)` returning normalized `Game` values with stable IDs (`provider:slug`). The default interface methods supply search, paging, details, screenshots and downloads. For large remote APIs override search/paging and adapt the repository to persist query pages; the current sources use complete feeds and local paging.
+3. Implement `fetchGames(refresh)` returning normalized `Game` values with stable IDs (`provider:slug`). The default interface methods supply search, paging, details, screenshots and downloads. For large remote APIs override search/paging and adapt the repository to persist query pages; complete feeds use local paging, while `PagedGameProvider` persists explicit remote page cursors.
 4. Return only metadata supplied by the source. Preserve missing values as null/empty. Do not substitute invented games, dates, developers or genre labels. `created`/`updated` repository dates are not release dates.
-5. Register the provider in `AppGraph.registry`. The console selector, source picker, catalogue, details and attribution screens use the same registry and normalized model. Rebuilding the APK is required to ship a new Kotlin adapter; no catalogue UI changes are required.
+5. Register the provider in `SourceRegistry.create(http)`. The console selector, source picker, catalogue, details and attribution screens use the same registry and normalized model. Rebuilding the APK is required to ship a new Kotlin adapter; no catalogue UI changes are required.
 6. Add local fixtures and deterministic MockWebServer tests. Ordinary tests must never contact live sites. Verify successful, empty, malformed, unavailable and changed responses.
 7. Document request limits and cache duration. Use timeouts, cancellation, HTTPS and caching. Do not advertise the provider as verified before a live smoke check succeeds. `tools/provider-smoke.py` demonstrates optional verification outside ordinary tests.
 
@@ -18,7 +18,7 @@ Currently only Universal-DB's `2048---3ds-port` is reviewed. Its publisher expli
 
 - Universal-DB: `https://db.universal-team.net/data/full.json`. The upstream README explicitly recommends this feed and requests attribution. Only category `game` is included; DS/3DS filtering uses `systems`. Descriptions are converted from embedded HTML to plain text with Jsoup. No external HTML scraping is used.
 - Homebrew Hub GBA: `gbadev-org/games`, documented by `gbdev/homebrewhub/DATABASES.md`. GitHub's recursive tree API discovers entry manifests; public raw JSON and images supply metadata/assets. At most two raw requests run concurrently, with 150 ms pacing and a persisted catalogue that is refreshed only on user request. Initial sync reads ~251 manifests and can be slow. An individual manifest network failure fails the refresh rather than silently publishing a partial catalogue. JSON entries with invalid metadata are skipped.
-- `hh3.gbdev.io` and `hh.gbdev.io` search APIs return 403 in this environment. No protections are bypassed. The API integration, GB/GBC and NES repository support are deferred. Unsupported console categories show an informative empty state.
+- `hh3.gbdev.io` and `hh.gbdev.io` search APIs return 403 in this environment. No protections are bypassed. Homebrew Hub's direct API and its GB/GBC/NES repository adapters remain deferred; GameBrew provides GB/GBC separately. Unsupported console categories show an informative empty state.
 
 Sources:
 - https://github.com/Universal-Team/db#using-the-data
@@ -68,3 +68,27 @@ The source provides article content within each listing page, so cover artwork, 
 Download links on the sample page lead to intermediary hosts. The adapter does not resolve them, follow protected download flows, or enqueue binaries. The user opens the original article in their browser for those links. No metadata license or publisher authorization is inferred from website availability. It is labelled as a Switch catalogue rather than homebrew.
 
 To add another paged adapter, implement `PagedGameProvider`, return page cursors/counts, register it, and add page-response fixtures plus repository tests for cache reuse, duplicate IDs, failed-page retry and cursor persistence. Avoid downloading every remote page at startup.
+
+
+## RPGMaker, further homebrew and website catalogues
+
+Source registration now lives in `SourceRegistry.create(http)`. PC is labelled **PC games** and groups `rpgmaker` and `rpgmaker-archive` under **RPGMaker**. PS Vita, PS3 and PS4 are registered console categories.
+
+| Source | Native access | Page size / request behavior |
+| --- | --- | --- |
+| RPGMaker.net | Public `/games/?portal=yes&p=N` HTML tables and public game description pages | 15 entries observed on page 1; next links drive explicit paging |
+| Internet Archive RPGMaker.net archive | Public `advancedsearch.php` collection query and `/metadata/{identifier}` | 50 records per requested page; 3,820 records verified |
+| NXbrew | Public WordPress category 22 at `nxbrew.me/wp-json/wp/v2/posts` | 100 per explicit page; 1,308 category records verified |
+| SuperPSX PS4 | Public category HTML and article HTML | 20 entries observed on page 1; explicit next-page links |
+| SteamRIP PC | Browser only | `robots.txt` disallows general crawlers; no native index or game entries fabricated |
+| NoPayStation PS3 | Browser only | `robots.txt` disallows general crawlers; no native index, package/licensing-key extraction or fabricated game data |
+
+RPGMaker.net and Archive robots policies permit these public catalogue/metadata paths. NXbrew permits its public category and REST paths. SuperPSX allows catalogue/article HTML but explicitly disallows `/wp-json/` and site search paths, so the adapter uses Jsoup over the permitted HTML. All native requests are paced and only user-selected sources/pages are fetched. Browser-only entries have `nativeBrowsing=false`, an explicit status, and are excluded from native Search.
+
+NXbrew uses the same parameterized `WordPressSource` implementation as Ziperto. It parses factual two-column information tables as well as colon-separated metadata. Source labels are retained: its first 100 records included 89 Switch and 11 Switch 2 records. The adapter saves only games matching its supported Switch console, while the parser retains the true platform label. It never changes a Switch 2 label to Switch.
+
+GameBrew now registers `gamebrew-ds`, `gamebrew-gb`, `gamebrew-vita` and `gamebrew-psp`. Verified catalogue sizes were 1,448 DS, 782 Game Boy-family, 1,059 Vita and 1,892 PSP entries. The GB table has an extra System column; headers determine author/update positions. DMG and CGB values drive GB/GBC filtering, with the same source/cache shared by both console selectors. PSP had one entry without artwork; it uses the normal image placeholder.
+
+Original websites handle new-source binary downloads. The Archive collection is a real collection with game child items, not one fabricated game representing the collection. No upload/publication timestamp is presented as an original game release date. No source game license is inferred from its host's availability.
+
+Fixture provenance is recorded in `app/src/test/resources/ADDITIONAL-SOURCE-FIXTURES.md` and `GAMEBREW-LICENSE.md`.

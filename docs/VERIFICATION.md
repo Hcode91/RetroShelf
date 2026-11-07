@@ -61,3 +61,24 @@ Verified the public category, robots.txt and WordPress API. Category ID 3534 rep
 The adapter defaults to 100 records per explicitly requested page. It saves source entries and the next-page cursor in Room; opening already supplied details requires no additional article request. The UI labels search/filter scope as saved listings, provides an explicit older-page button, and opens original articles for download links.
 
 Forty-five deterministic JVM provider/repository tests passed locally, including pagination, cursor persistence across repository reopening, deduplication without losing favorites, failed-page retry, empty responses and API/schema errors. Version-1 → version-2 → version-3 SQL migration checks preserved existing snapshots and added nullable page/count fields. The Android migration instrumentation test also checks cursor/count persistence after reopening; its CI result has not been inspected. No APK was built locally, and build monitoring remains with the user.
+
+## RPGMaker, further homebrew and source expansion — 2026-11-07
+
+Public live responses were verified and processed by the production Kotlin parsers:
+
+| Source | Verified data |
+| --- | --- |
+| RPGMaker.net | 15 actual first-page game records and a next-page link; public Dragon Child details |
+| Internet Archive RPGMaker.net collection | 3,820 child records via public collection search; individual archived-game metadata |
+| NXbrew | Public WordPress category 22, 1,308 total source records; first 100 included 89 Switch and 11 explicit Switch 2 records |
+| SuperPSX PS4 | 20 actual first-page cards, next-page link and public article details via HTML |
+| GameBrew DS | 1,448 records with artwork URLs |
+| GameBrew Game Boy family | 782 records with artwork URLs; source System column distinguishes DMG/CGB |
+| GameBrew Vita | 1,059 records with artwork URLs |
+| GameBrew PSP | 1,892 records, 1,891 with artwork URLs; missing art remains missing |
+
+SteamRIP and NoPayStation returned public website pages, but their robots policies disallow general crawling. They are registered as browser links with explicit status and excluded from native Search. SuperPSX's robots policy disallows its WordPress API, so runtime integration uses allowed category/article HTML only. No NoPayStation package or license-key extraction is implemented.
+
+Representative artwork returned HTTP 200 for RPGMaker.net, Archive, SuperPSX and each added GameBrew platform. All loaded game records/pages retain manual-refresh-only caching; only explicitly selected sources/pages make metadata requests.
+
+Sixty-one deterministic JVM tests passed, including new source fixtures, RPGMaker grouping, browser-only fallback behavior, new console selection, HTML layout failures, archive paging, NXbrew platform labels, Game Boy header-based author/date parsing, and Color-only game filtering. Fixture provenance is documented alongside the fixtures. Targeted source tests were repeated after trimming unrelated HTML/prose from fixtures. No APK was built locally; Android builds/emulator outcomes are left uninspected for the user to monitor.

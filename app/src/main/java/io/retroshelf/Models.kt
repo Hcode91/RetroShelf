@@ -11,8 +11,9 @@ object Consoles {
         Console("DS", "Nintendo DS", "Nintendo"), Console("3DS", "Nintendo 3DS", "Nintendo"), Console("GC", "GameCube", "Nintendo"), Console("WII", "Nintendo Wii", "Nintendo"),
         Console("WIIU", "Nintendo Wii U", "Nintendo"), Console("SWITCH", "Nintendo Switch", "Nintendo"),
         Console("PS1", "PlayStation", "Sony"), Console("PS2", "PlayStation 2", "Sony"), Console("PSP", "PSP", "Sony"),
+        Console("VITA", "PS Vita", "Sony"), Console("PS3", "PlayStation 3", "Sony"), Console("PS4", "PlayStation 4", "Sony"),
         Console("SMS", "Master System", "Sega"), Console("MD", "Mega Drive / Genesis", "Sega"), Console("DC", "Dreamcast", "Sega"),
-        Console("AMIGA", "Commodore Amiga", "Other"), Console("ATARI", "Atari consoles", "Other"), Console("PC", "PC homebrew", "Other"))
+        Console("AMIGA", "Commodore Amiga", "Other"), Console("ATARI", "Atari consoles", "Other"), Console("PC", "PC games", "Other"))
 }
 data class GameFile(val name: String, val url: String, val size: Long? = null, val authorization: String? = null) {
     val format: String get() = name.substringAfterLast('.', "Unknown").uppercase(Locale.ROOT)

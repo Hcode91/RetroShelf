@@ -19,6 +19,8 @@ interface GameProvider {
     val section: String get() = "Homebrew"
     val attribution: String get() = "Data from $name"
     val metadataLicenseUrl: String? get() = null
+    val nativeBrowsing: Boolean get() = true
+    val connectionHint: String get() = "Live access verified · tap to connect"
     val refreshDetails: Boolean get() = false
     val supportedConsoles: Set<String>
     fun clearMemoryCache() {}
@@ -40,6 +42,12 @@ interface PagedGameProvider : GameProvider {
 data class JsonResponse(val body: JsonElement, val headers: Headers)
 class JsonHttp(val client: OkHttpClient) {
     suspend fun get(url: String): JsonElement = response(url).body
+    suspend fun text(url: String): String = withContext(Dispatchers.IO) {
+        client.newCall(Request.Builder().url(url).header("User-Agent", "RetroShelf/0.2 (+https://github.com/Hcode91/RetroShelf)").build()).execute().use {
+            if(!it.isSuccessful) throw IOException("Source returned HTTP ${it.code}. Open its website or try later.")
+            it.body?.string() ?: throw IOException("Empty source response")
+        }
+    }
     suspend fun response(url: String): JsonResponse = withContext(Dispatchers.IO) {
         client.newCall(Request.Builder().url(url).header("User-Agent", "RetroShelf/0.2 (+https://github.com/Hcode91/RetroShelf)").build()).execute().use {
             if (!it.isSuccessful) throw IOException("Source returned HTTP ${it.code}. Try later or open its website.")

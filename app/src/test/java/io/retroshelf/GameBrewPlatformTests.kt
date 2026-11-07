@@ -13,7 +13,7 @@ import org.junit.runners.Parameterized
 class GameBrewPlatformTests(private val config: GameBrewCatalogue) {
     companion object {
         @JvmStatic @Parameterized.Parameters(name = "{0}")
-        fun platforms() = GameBrewCatalogue.all.drop(1).map { arrayOf(it) }
+        fun platforms() = GameBrewCatalogue.all.filter { it.console in setOf("SWITCH", "WIIU", "WII", "3DS") }.map { arrayOf(it) }
     }
     private fun fixture(suffix: String) = javaClass.classLoader!!.getResource("gamebrew-${config.console.lowercase()}-$suffix.html")!!.readText()
     private fun games() = GameBrewParser.catalogue(fixture("catalogue"), config.console, config.providerId)
