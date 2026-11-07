@@ -47,6 +47,14 @@ class ShelfRepository(val registry: ProviderRegistry, val dao: ShelfDao) {
         } catch(e: kotlinx.coroutines.CancellationException) { throw e }
         catch(e: Exception) { if(cached.isNotEmpty()) return cached.map(::decode) to true; throw e }
     }
+    suspend fun details(game: Game): Game {
+        val provider = registry.get(game.provider)
+        if(!provider.refreshDetails || System.currentTimeMillis() - game.detailsFetchedAt < 6 * 60 * 60 * 1000) return game
+        val enriched = provider.fetchGameDetails(game.id)
+        val old = dao.game(game.id)
+        dao.put(StoredGame(game.id, game.provider, gson.toJson(enriched), old?.favorite ?: false, old?.viewed ?: 0, old?.cachedAt ?: 0))
+        return enriched
+    }
     suspend fun view(game: Game) {
         val old = dao.game(game.id)
         dao.put(StoredGame(game.id, game.provider, gson.toJson(game), old?.favorite ?: false, System.currentTimeMillis(), old?.cachedAt ?: 0))
@@ -59,7 +67,7 @@ class ShelfRepository(val registry: ProviderRegistry, val dao: ShelfDao) {
 class AppGraph(context: Context) {
     val db = Room.databaseBuilder(context, ShelfDatabase::class.java, "retroshelf.db").build()
     val http = JsonHttp(JsonHttp.client())
-    val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http)))
+    val registry = ProviderRegistry(listOf(UniversalDb(http), HomebrewRepository(http), GameBrew(http)))
     val repository = ShelfRepository(registry, db.shelf())
     val downloads = ShelfDownloads(context.applicationContext, db.shelf())
 }

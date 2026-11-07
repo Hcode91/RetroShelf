@@ -21,7 +21,8 @@ data class Game(
     val consoles: List<String>, val sourceUrl: String, val artwork: String? = null,
     val screenshots: List<String> = emptyList(), val developer: String? = null,
     val publisher: String? = null, val release: String? = null, val updated: String? = null,
-    val genres: List<String> = emptyList(), val license: String? = null, val downloads: List<GameFile> = emptyList()
+    val genres: List<String> = emptyList(), val license: String? = null, val downloads: List<GameFile> = emptyList(),
+    val detailsFetchedAt: Long = 0 // Local cache timestamp, never shown as source metadata.
 )
 enum class Sort { TITLE, UPDATED, DEVELOPER }
 data class GameQuery(val console: String, val search: String = "", val genre: String = "", val sort: Sort = Sort.TITLE, val page: Int = 0, val pageSize: Int = 24)

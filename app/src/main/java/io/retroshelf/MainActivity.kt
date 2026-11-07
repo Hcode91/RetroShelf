@@ -100,7 +100,7 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
                         Icon(Icons.Default.SportsEsports, null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(12.dp)); Text(console.name, fontWeight = FontWeight.Bold)
                         val count = vm.graph.registry.forConsole(console.id).size
-                        Text(if(count == 0) "Sources coming soon" else "$count supported source", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if(count == 0) "Sources coming soon" else "$count supported ${if(count == 1) "source" else "sources"}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -118,13 +118,16 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { Intro(Consoles.all.first { it.id == console }.name, "Choose a source website") }
         if(providers.isEmpty()) item { EmptyState("No supported source yet", "This console is registered. A verified, authorized provider can be added through the adapter interface.") }
-        items(providers) { p ->
-            ElevatedCard(onClick = { if(p.id !in disabled) nav.navigate("catalogue/$console/${p.id}") }) {
-                Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary)
-                    Text(p.name, style = MaterialTheme.typography.titleLarge); Text(p.description)
-                    Text("Platforms: ${p.supportedConsoles.joinToString()}", style = MaterialTheme.typography.labelLarge)
-                    Text(if(p.id in disabled) "Disabled in Settings" else statuses[p.id] ?: "Live access verified · tap to connect", color = MaterialTheme.colorScheme.secondary)
+        providers.groupBy { it.section }.forEach { (section, sources) ->
+            item { Text(section, style = MaterialTheme.typography.titleLarge) }
+            items(sources) { p ->
+                ElevatedCard(onClick = { if(p.id !in disabled) nav.navigate("catalogue/$console/${p.id}") }) {
+                    Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary)
+                        Text(p.name, style = MaterialTheme.typography.titleLarge); Text(p.description)
+                        Text("Platforms: ${p.supportedConsoles.joinToString()}", style = MaterialTheme.typography.labelLarge)
+                        Text(if(p.id in disabled) "Disabled in Settings" else statuses[p.id] ?: "Live access verified · tap to connect", color = MaterialTheme.colorScheme.secondary)
+                    }
                 }
             }
         }
@@ -206,11 +209,23 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
 }
 @Composable private fun DetailsScreen(id: String, vm: ShelfViewModel) {
     val favorites by vm.favorites.collectAsStateWithLifecycle()
-    val game by produceState<Game?>(null, id) { value = vm.catalogue.value.games.firstOrNull { it.id == id } ?: vm.favorites.value.firstOrNull { it.id == id } ?: vm.recent.value.firstOrNull { it.id == id } ?: vm.graph.db.shelf().game(id)?.let(vm.graph.repository::decode); value?.let(vm::view) }
+    var detailsLoading by remember(id) { mutableStateOf(false) }
+    val game by produceState<Game?>(null, id) {
+        value = vm.graph.db.shelf().game(id)?.let(vm.graph.repository::decode) ?: vm.catalogue.value.games.firstOrNull { it.id == id } ?: vm.favorites.value.firstOrNull { it.id == id } ?: vm.recent.value.firstOrNull { it.id == id }
+        value?.let { cached ->
+            vm.view(cached)
+            detailsLoading = vm.graph.registry.get(cached.provider).refreshDetails
+            try { value = vm.graph.repository.details(cached); value?.let(vm::view) }
+            catch(e: kotlinx.coroutines.CancellationException) { throw e }
+            catch(_: Exception) { vm.messages.emit("Game details unavailable. Showing saved information; open the original website or try again later.") }
+            finally { detailsLoading = false }
+        }
+    }
     val context = LocalContext.current
     val g = game
     if(g == null) { EmptyState("Loading game", "If this entry was removed from the cache, return to its catalogue."); return }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if(detailsLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         item { Artwork(g.artwork, g.title, Modifier.fillMaxWidth().height(240.dp)) }
         item { Row(verticalAlignment = Alignment.CenterVertically) { Text(g.title, Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); IconButton(onClick = { vm.favorite(g) }) { Icon(if(favorites.any { it.id == g.id }) Icons.Default.Favorite else Icons.Default.FavoriteBorder, "Toggle favorite") } } }
         item { Text(listOfNotNull(g.developer?.let { "Developer: $it" }, g.publisher?.let { "Publisher: $it" }, g.release?.let { "Release: $it" }, "Platforms: ${g.consoles.joinToString()}", g.license?.let { "Source license: $it" }).joinToString("\n"), color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -230,7 +245,10 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
             } }
         }
         item { OutlinedButton(onClick = { openWebsite(context, g.sourceUrl) }, Modifier.fillMaxWidth()) { Text("Open original website ↗") } }
-        item { Text("Data from ${vm.graph.registry.get(g.provider).name}. RetroShelf does not install or run downloaded files.", style = MaterialTheme.typography.bodySmall) }
+        item { Text("${vm.graph.registry.get(g.provider).attribution}. RetroShelf does not install or run downloaded files.", style = MaterialTheme.typography.bodySmall) }
+        vm.graph.registry.get(g.provider).metadataLicenseUrl?.let { license ->
+            item { TextButton(onClick = { openWebsite(context, license) }) { Text("Metadata license: CC BY-SA 4.0 ↗") } }
+        }
     }
 }
 @Composable private fun SearchScreen(vm: ShelfViewModel, nav: NavHostController) {
@@ -278,9 +296,9 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
         item { OutlinedButton(onClick = vm::clearCatalogue) { Text("Clear catalogue cache") } }
         item { Text("Provider management", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> ToggleRow(p.name, p.id !in disabled) { vm.enable(p.id, it) } }
-        item { Text("About RetroShelf 0.2", style = MaterialTheme.typography.titleLarge); Text("A native browser for community homebrew. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
+        item { Text("About RetroShelf 0.2.1", style = MaterialTheme.typography.titleLarge); Text("A native browser for community homebrew. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
         item { Text("Source attribution", style = MaterialTheme.typography.titleLarge) }
-        items(vm.graph.registry.providers) { p -> TextButton(onClick = { openWebsite(context, p.website) }) { Text("Data from ${p.name} ↗") } }
+        items(vm.graph.registry.providers) { p -> Column { Text(p.attribution, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { openWebsite(context, p.website) }) { Text("${p.name} ↗") } } }
         item { Text("Homebrew Hub API access could not be verified (HTTP 403). GBA uses its public upstream repository. GB/GBC integrations remain unavailable. Universal search is deferred; search each enabled catalogue using the Search tab.", style = MaterialTheme.typography.bodySmall) }
     }
 }

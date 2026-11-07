@@ -16,6 +16,10 @@ interface GameProvider {
     val name: String
     val description: String
     val website: String
+    val section: String get() = "Homebrew"
+    val attribution: String get() = "Data from $name"
+    val metadataLicenseUrl: String? get() = null
+    val refreshDetails: Boolean get() = false
     val supportedConsoles: Set<String>
     fun clearMemoryCache() {}
     suspend fun fetchGames(refresh: Boolean = false): List<Game>
