@@ -49,7 +49,7 @@ class ShelfViewModel(application: Application) : AndroidViewModel(application) {
     fun cancel(row: DownloadRecord) { viewModelScope.launch { safely { graph.downloads.cancel(row) } } }
     fun retry(row: DownloadRecord) { viewModelScope.launch { safely { graph.downloads.retry(row) } } }
     fun export(row: DownloadRecord, uri: android.net.Uri) { viewModelScope.launch { safely { graph.downloads.export(row, uri); messages.emit("File saved") } } }
-    fun clearCatalogue() { loadJob?.cancel(); active = null; viewModelScope.launch { safely { graph.registry.providers.forEach { it.clearMemoryCache() }; graph.db.shelf().clearUnused(); graph.db.shelf().expireCache(); _catalogue.value = CatalogueState(); messages.emit("Catalogue cache cleared; favorites and recent games retained") } } }
+    fun clearCatalogue() { loadJob?.cancel(); active = null; viewModelScope.launch { safely { graph.repository.clearCache(); _catalogue.value = CatalogueState(); messages.emit("Catalogue cache cleared; favorites and recent games retained") } } }
     private suspend fun safely(block: suspend () -> Unit) { try { block() } catch(e: CancellationException) { throw e } catch(e: Exception) { messages.emit(e.message ?: "Operation failed") } }
     override fun onCleared() { graph.db.close(); super.onCleared() }
 }

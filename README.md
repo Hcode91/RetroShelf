@@ -16,7 +16,7 @@ All APK builds run through GitHub Actions. The workflow installs JDK 17, Gradle 
 - Universal-DB DS/3DS games, Homebrew Hub's official GBA repository, and a separate **GBA → GameBrew homebrew → GameBrew** source with genre lists, gallery artwork and on-demand details. No fictional fallback entries.
 - Per-source title/description/developer search, source genre/tag filtering, title/update/developer sorting, grid/list view, local paging, pull-to-refresh, error/retry states and offline cached results.
 - Details show available source description, screenshots, author, release metadata, license, file formats/sizes, and publisher links. Missing metadata is labelled rather than invented.
-- Persistent favorites and recently viewed games in Room. Six-hour catalogue cache, image cache, provider toggles, dark/light theme and source attribution.
+- Persistent favorites and recently viewed games in Room. Saved catalogues and opened details retained until manual refresh/clear, image cache, provider toggles, dark/light theme and source attribution.
 - Android DownloadManager progress, completion notifications, cancel, failure history and retry. Public Downloads/RetroShelf or app storage; a completed download can be copied to a user-selected Storage Access Framework destination. Files are never installed or executed.
 - Direct downloads are limited to individually reviewed distributions. The MIT-licensed 2048 3DS port is initially enabled; unreviewed catalogue files display the source website instead.
 
@@ -39,3 +39,11 @@ Implement `GameProvider`, normalize data into `Game`, register it in `AppGraph`,
 ## Signed releases later
 
 Create an upload keystore outside the repository. Store its base64 bytes, store password, alias and key password as GitHub Actions encrypted secrets. In a separate release workflow, decode the keystore into the runner's temporary directory and pass secret values through environment variables into an Android release signing configuration. Run tests/lint, build `assembleRelease`/`bundleRelease`, and upload signed artifacts. Never commit keystores, passwords or populated `local.properties`. Back up the release key securely; it is required to update installed release builds. Debug and release signatures are different.
+
+## Saved entries and requests
+
+Catalogues are saved in Room with **no time-based expiry**, including successful empty results. Reopening the app, browsing, searching, sorting and filtering reuse saved entries. A source is contacted only for its first load, an explicit pull-to-refresh, or after clearing its saved catalogue. New catalogue entries appear when you refresh.
+
+GameBrew detail pages are fetched once when opened and then saved without expiry. **Refresh game details** requests a fresh copy of that article. Opening a saved summary for the first time loads only that article, without refetching the catalogue. Refreshing a catalogue replaces its summaries, so an individual detail page may load again when next opened. No bulk detail crawl or background catalogue polling runs.
+
+Existing version-1 databases migrate without deleting favorites, history, downloads or catalogue entries. A saved empty catalogue is remembered across restarts. Clearing catalogue cache resets saved metadata while retaining bookmarks/history. Artwork remains governed by Coil's separate memory/disk cache; an evicted or uncached image can still require an image request.

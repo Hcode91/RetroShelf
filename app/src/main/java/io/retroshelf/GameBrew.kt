@@ -37,7 +37,11 @@ class GameBrew(private val http: JsonHttp, private val api: String = "https://ww
     override suspend fun load(): List<Game> = GameBrewParser.catalogue(page("List_of_GBA_homebrew_games"))
     override suspend fun fetchGameDetails(id: String): Game {
         val summary = fetchGames().first { it.id == id }
-        return GameBrewParser.details(page(summary.slug), summary)
+        return fetchGameDetails(summary)
+    }
+    override suspend fun fetchGameDetails(game: Game): Game {
+        require(game.provider == id && game.id == "$id:${game.slug}" && game.slug.isNotBlank() && ':' !in game.slug) { "Invalid GameBrew entry" }
+        return GameBrewParser.details(page(game.slug), game)
     }
 }
 

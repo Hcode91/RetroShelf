@@ -25,6 +25,7 @@ interface GameProvider {
     suspend fun fetchGames(refresh: Boolean = false): List<Game>
     suspend fun searchGames(query: GameQuery): GamePage = cataloguePage(fetchGames(), query)
     suspend fun fetchGameDetails(id: String): Game = fetchGames().first { it.id == id }
+    suspend fun fetchGameDetails(game: Game): Game = fetchGameDetails(game.id)
     suspend fun fetchScreenshots(id: String): List<String> = fetchGameDetails(id).screenshots
     suspend fun fetchDownloads(id: String): List<GameFile> = fetchGameDetails(id).downloads
 }
@@ -93,12 +94,11 @@ object Normalizer {
 abstract class FeedProvider : GameProvider {
     private val mutex = Mutex()
     @Volatile private var loaded: List<Game>? = null
-    private var loadedAt = 0L
     override fun clearMemoryCache() { loaded = null }
     protected abstract suspend fun load(): List<Game>
     override suspend fun fetchGames(refresh: Boolean): List<Game> = mutex.withLock {
-        if(refresh || System.currentTimeMillis() - loadedAt > 6 * 60 * 60 * 1000) loaded = null
-        loaded ?: load().also { loaded = it; loadedAt = System.currentTimeMillis() }
+        if(refresh) loaded = null
+        loaded ?: load().also { loaded = it }
     }
 }
 class UniversalDb(private val http: JsonHttp, private val endpoint: String = "https://db.universal-team.net/data/full.json") : FeedProvider() {

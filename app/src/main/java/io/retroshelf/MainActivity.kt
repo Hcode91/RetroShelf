@@ -210,12 +210,13 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
 @Composable private fun DetailsScreen(id: String, vm: ShelfViewModel) {
     val favorites by vm.favorites.collectAsStateWithLifecycle()
     var detailsLoading by remember(id) { mutableStateOf(false) }
-    val game by produceState<Game?>(null, id) {
+    var detailRefresh by remember(id) { mutableIntStateOf(0) }
+    val game by produceState<Game?>(null, id, detailRefresh) {
         value = vm.graph.db.shelf().game(id)?.let(vm.graph.repository::decode) ?: vm.catalogue.value.games.firstOrNull { it.id == id } ?: vm.favorites.value.firstOrNull { it.id == id } ?: vm.recent.value.firstOrNull { it.id == id }
         value?.let { cached ->
             vm.view(cached)
             detailsLoading = vm.graph.registry.get(cached.provider).refreshDetails
-            try { value = vm.graph.repository.details(cached); value?.let(vm::view) }
+            try { value = vm.graph.repository.details(cached, refresh = detailRefresh > 0); value?.let(vm::view) }
             catch(e: kotlinx.coroutines.CancellationException) { throw e }
             catch(_: Exception) { vm.messages.emit("Game details unavailable. Showing saved information; open the original website or try again later.") }
             finally { detailsLoading = false }
@@ -225,6 +226,9 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
     val g = game
     if(g == null) { EmptyState("Loading game", "If this entry was removed from the cache, return to its catalogue."); return }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if(vm.graph.registry.get(g.provider).refreshDetails) item {
+            TextButton(onClick = { detailRefresh++ }, enabled = !detailsLoading) { Text("Refresh game details") }
+        }
         if(detailsLoading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         item { Artwork(g.artwork, g.title, Modifier.fillMaxWidth().height(240.dp)) }
         item { Row(verticalAlignment = Alignment.CenterVertically) { Text(g.title, Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); IconButton(onClick = { vm.favorite(g) }) { Icon(if(favorites.any { it.id == g.id }) Icons.Default.Favorite else Icons.Default.FavoriteBorder, "Toggle favorite") } } }
@@ -293,10 +297,11 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
         item { ToggleRow("Dark theme", dark, vm::setDark) }
         item { ToggleRow("Save to public Downloads/RetroShelf", public, vm::setPublic); Text("When off, files use app storage and are removed on uninstall. Use Save a copy in Downloads to choose any document destination.", style = MaterialTheme.typography.bodySmall) }
         item { OutlinedButton(onClick = { scope.launch { withContext(Dispatchers.IO) { context.imageLoader.diskCache?.clear() }; context.imageLoader.memoryCache?.clear(); vm.messages.emit("Image cache cleared") } }) { Text("Clear image cache") } }
+        item { Text("Catalogues and opened game details stay saved until you refresh or clear them. Pull down in a catalogue to check for updates.", style = MaterialTheme.typography.bodySmall) }
         item { OutlinedButton(onClick = vm::clearCatalogue) { Text("Clear catalogue cache") } }
         item { Text("Provider management", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> ToggleRow(p.name, p.id !in disabled) { vm.enable(p.id, it) } }
-        item { Text("About RetroShelf 0.2.1", style = MaterialTheme.typography.titleLarge); Text("A native browser for community homebrew. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
+        item { Text("About RetroShelf 0.2.2", style = MaterialTheme.typography.titleLarge); Text("A native browser for community homebrew. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
         item { Text("Source attribution", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> Column { Text(p.attribution, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { openWebsite(context, p.website) }) { Text("${p.name} ↗") } } }
         item { Text("Homebrew Hub API access could not be verified (HTTP 403). GBA uses its public upstream repository. GB/GBC integrations remain unavailable. Universal search is deferred; search each enabled catalogue using the Search tab.", style = MaterialTheme.typography.bodySmall) }

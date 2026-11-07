@@ -79,4 +79,16 @@ class GameBrewTests {
             try { provider.fetchGames(true); fail("403 must fail without bypass") } catch(_: java.io.IOException) { }
         }
     }
+    @Test fun `saved entry opens details after restart without reloading catalogue`() = runTest {
+        val summary = catalogue().first { it.slug == "Minicraft_GBA" }
+        MockWebServer().use { server ->
+            server.start()
+            val restarted = GameBrew(JsonHttp(JsonHttp.client()), server.url("/api.php").toString())
+            server.enqueue(MockResponse().setBody(fixture("gamebrew-details.json")))
+            assertEquals(3, restarted.fetchGameDetails(summary).screenshots.size)
+            assertEquals(1, server.requestCount)
+            assertEquals("Minicraft_GBA", server.takeRequest().requestUrl!!.queryParameter("page"))
+        }
+    }
+
 }

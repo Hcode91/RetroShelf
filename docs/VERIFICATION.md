@@ -32,3 +32,9 @@ The live public MediaWiki parse response was processed by the actual Kotlin/Jsou
 Fourteen deterministic provider tests (existing source tests plus five GameBrew tests) passed locally using Kotlin 2.2.21, JUnit and MockWebServer. This was a JVM-only check; no APK was built locally. Fixtures are attributed under `app/src/test/resources/GAMEBREW-LICENSE.md`.
 
 APK and Android UI build outcomes for this revision are left to the user, who requested ownership of GitHub Actions monitoring. No CI or on-device pass is claimed for this addition.
+
+## Persistent saved-entry policy — 2026-11-07
+
+Removed timed expiry from catalogue and opened-detail storage. Added persistent snapshot markers for empty catalogues, a version-1 → version-2 Room migration preserving existing data, an explicit detail-refresh button, and a saved-entry GameBrew detail path that does not reload the catalogue after restart.
+
+Twenty-one deterministic JVM provider/repository tests passed locally. Cache tests use the production repository with an in-memory DAO implementation; the local harness strips Room annotations from the DAO contract to compile without Android tooling. Tests cover old entries without network calls, empty-result persistence, explicit refresh/clear behavior, and article-only detail requests. Migration SQL was also executed against SQLite and preserved snapshot, favorite and history values. `CacheMigrationTest` adds actual Room upgrade/reopen coverage to the Android emulator workflow; that instrumentation result has not been inspected. No APK was built locally and no CI outcomes were monitored.
