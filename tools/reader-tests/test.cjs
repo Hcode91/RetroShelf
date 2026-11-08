@@ -1,0 +1,43 @@
+const {chromium}=require('playwright');
+const fs=require('fs');
+const path=require('path');
+const assert=require('node:assert/strict');
+const script=fs.readFileSync(path.resolve(__dirname,'../../app/src/main/assets/website-reader.js'),'utf8');
+const image='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"></svg>';
+let runningBrowser=null;
+(async()=>{
+ const browser=await chromium.launch({...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {}),headless:true,args:['--no-sandbox']});
+ runningBrowser=browser;
+ const page=await browser.newPage({viewport:{width:390,height:750}});
+ let navigations=0;
+ let html='', policy='';
+ await page.route('**/*',route=>{ if(route.request().isNavigationRequest()){navigations++;return route.fulfill({contentType:'text/html',body:html,headers:policy?{'Content-Security-Policy':policy}:{}});} return route.abort(); });
+ async function load(url,fixture){html=fixture;await page.goto(url);await page.addScriptTag({content:script});}
+ async function enable(value=true){return page.evaluate(v=>window.__retroShelfReader.setEnabled(v,true),value);}
+ const list='<nav id="chrome">Website navigation</nav><main><ul id="alpha" class="az-link-links-block pages-numbers"><li>Alphabet fixture</li></ul><ul class="az-list"><li class="az-list-item"><a href="/fixture-one/">Fixture One</a><span id="extra">Extra metadata</span></li><li class="az-list-item"><a href="/fixture-two/">Fixture Two</a></li></ul></main>';
+ await load('https://steamrip.com/games-list-page/',list);
+ assert.equal(await enable(),'reader');
+ assert.equal(await page.locator('#chrome').isVisible(),false);
+ assert.equal(await page.locator('#extra').isVisible(),false);
+ assert.equal(await page.locator('#alpha').isVisible(),false);
+ assert.equal(await page.getByText('Fixture One',{exact:true}).isVisible(),true);
+ assert.equal(await page.locator('img').count(),0,'No invented artwork');
+ const before=navigations;
+ await enable(false);assert.equal(await page.locator('#chrome').isVisible(),true);assert.equal(await page.locator('#extra').isVisible(),true);
+ await enable(true);assert.equal(navigations,before,'Toggling never navigates');
+ await page.evaluate(()=>{const form=document.createElement('form');form.id='challenge-form';form.textContent='Fixture challenge';document.body.appendChild(form);});
+ await page.waitForTimeout(350);
+ assert.equal(await page.locator('#challenge-form').isVisible(),true,'Challenge remains visible');
+ assert.equal(await page.locator('body').evaluate(e=>e.classList.contains('rs-reader-on')),false);
+ await load('https://nopaystation.com/search?platform=ps3','<nav id="chrome">Navigation</nav><table class="resultsTable"><tbody><tr><td><a href="/view/PS3/fixture">Fixture PS3 game</a><span id="badge">Metadata</span><div id="modal">Unrelated controls</div></td><td id="second">Other column</td></tr></tbody></table>');
+ assert.equal(await enable(),'reader');assert.equal(await page.locator('#badge').isVisible(),false);assert.equal(await page.locator('#modal').isVisible(),false);assert.equal(await page.locator('#second').isVisible(),false);
+ assert.equal(await page.getByText('Fixture PS3 game',{exact:true}).isVisible(),true);
+ await page.evaluate(()=>document.querySelector('tbody').insertAdjacentHTML('beforeend','<tr><td><a href="/view/PS3/later">Later fixture</a><span id="later-extra">Metadata</span></td></tr>'));
+ await page.waitForTimeout(350);assert.equal(await page.locator('#later-extra').isVisible(),false);assert.equal(await page.getByText('Later fixture',{exact:true}).isVisible(),true);
+ await load('https://steamrip.com/','<nav id="chrome">Navigation</nav><article class="post-item"><a class="post-thumb" href="/fixture/"><img id="cover" src=\''+image+'\'></a><div class="post-details"><h2 class="post-title"><a href="/fixture/">Gallery fixture</a></h2><span id="details">Other details</span></div><span id="direct">Direct metadata</span></article>');
+ assert.equal(await enable(),'reader');assert.equal(await page.locator('#cover').isVisible(),true);assert.equal(await page.locator('#details').isVisible(),false);assert.equal(await page.locator('#direct').isVisible(),false);
+ await load('https://steamrip.com/fixture-article/','<h1 id="article">Original fixture page</h1>');assert.equal(await enable(),'original');assert.equal(await page.locator('#article').isVisible(),true);
+ policy="style-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'";
+ await load('https://steamrip.com/games-list-page/',list);assert.equal(await enable(),'original');assert.equal(await page.locator('#chrome').isVisible(),true,'Blocked styles leave the original page');
+ await browser.close();runningBrowser=null;console.log('Reader browser checks passed: titles, existing images, hidden metadata/chrome, restore toggle, late rows, visible challenges, unsupported-layout fallback, and no navigation on toggles.');
+})().catch(async e=>{console.error(e);if(runningBrowser) await runningBrowser.close();process.exitCode=1;});

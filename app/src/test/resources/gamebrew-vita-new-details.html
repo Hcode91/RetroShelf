@@ -1,0 +1,104 @@
+<div class="mw-content-ltr mw-parser-output" lang="en-GB" dir="ltr"><div id="Ads-InfoboxTop"></div><table class="infobox"><tbody><tr><th class="infobox-title" scope="col" colspan="2">The Dark Queen Of Mortholme Vita</th></tr><tr><td class="infobox-image" colspan="2"><span typeof="mw:File"><a href="/wiki/File:TheDarkQueenOfMortholmeVita.png" class="mw-file-description"><img src="/thumb.php?f=TheDarkQueenOfMortholmeVita.png&amp;width=300" decoding="async" loading="lazy" width="300" height="170" class="mw-file-element" srcset="/thumb.php?f=TheDarkQueenOfMortholmeVita.png&amp;width=450 1.5x, /thumb.php?f=TheDarkQueenOfMortholmeVita.png&amp;width=600 2x" /></a></span></td></tr><tr><th class="infobox-header" scope="col" colspan="2"><div id="largemobilebanner"></div></th></tr><tr><th class="infobox-header" scope="col" colspan="2">General</th></tr><tr><th scope="row" class="infobox-label">Author</th><td class="infobox-data"><a href="/index.php?title=User:Rocroverss&amp;action=edit&amp;redlink=1" class="new" title="User:Rocroverss (page does not exist)">Rocroverss</a></td></tr><tr><th scope="row" class="infobox-label">Type</th><td class="infobox-data"><a href="/wiki/List_of_Vita_homebrew_games#Action" title="List of Vita homebrew games">Action</a>  </td></tr><tr><th scope="row" class="infobox-label">Version</th><td class="infobox-data">1.0</td></tr><tr><th scope="row" class="infobox-label">License</th><td class="infobox-data">N/A</td></tr><tr><th scope="row" class="infobox-label">Last Updated</th><td class="infobox-data">2026/10/11</td></tr><tr><th class="infobox-header" scope="col" colspan="2"><div id="Ads-Infobox1"></div></th></tr><tr><th class="infobox-header" scope="col" colspan="2">Links</th></tr><tr><td class="infobox-data" colspan="2" style="text-align:center"><a rel="nofollow" class="external text" href="https://github.com/Rocroverss/The-Dark-Queen-Of-Mortholme-psvita/releases">Download</a></td></tr><tr><td class="infobox-data" colspan="2" style="text-align:center"><a rel="nofollow" class="external text" href="https://www.rinnegatamante.eu/vitadb/#/info/1612">Website</a></td></tr><tr><td class="infobox-data" colspan="2" style="text-align:center"><a rel="nofollow" class="external text" href="https://github.com/Rocroverss/The-Dark-Queen-Of-Mortholme-psvita">Source</a></td></tr><tr><th class="infobox-header" scope="col" colspan="2"><div id="Ads-Infobox"></div></th></tr></tbody></table>
+<p>A patch for The Dark Queen Of Mortholme to run on the PlayStation Vita.
+</p><p>The Dark Queen Of Mortholme is a game where you play as the Dark Queen - the most powerful being of your entire universe. Your lair is breached by an aspiring hero - a pitiful thing, easily crushed.
+</p><p>Except they keep coming back.
+</p><p>A 20 minute anti-game about an unconventional relationship and the capacity for change.
+</p>
+<div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading"><input type="checkbox" role="button" id="toctogglecheckbox" class="toctogglecheckbox" style="display:none" /><div class="toctitle" lang="en-GB" dir="ltr"><h2 id="mw-toc-heading">Contents</h2><span class="toctogglespan"><label class="toctogglelabel" for="toctogglecheckbox"></label></span></div>
+<ul>
+<li class="toclevel-1 tocsection-1"><a href="#Installation"><span class="tocnumber">1</span> <span class="toctext">Installation</span></a></li>
+<li class="toclevel-1 tocsection-2"><a href="#Screenshots"><span class="tocnumber">2</span> <span class="toctext">Screenshots</span></a></li>
+<li class="toclevel-1 tocsection-3"><a href="#Changelog"><span class="tocnumber">3</span> <span class="toctext">Changelog</span></a></li>
+<li class="toclevel-1 tocsection-4"><a href="#Credits"><span class="tocnumber">4</span> <span class="toctext">Credits</span></a></li>
+<li class="toclevel-1 tocsection-5"><a href="#External_links"><span class="tocnumber">5</span> <span class="toctext">External links</span></a></li>
+</ul>
+</div>
+
+<h2><span class="mw-headline" id="Installation">Installation</span><span class="mw-editsection">
+	<a role="button" href="/index.php?title=The_Dark_Queen_Of_Mortholme_Vita&amp;action=edit&amp;section=1" title="Edit section: Installation" class="cdx-button cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only ">
+    <span class="citizen-ui-icon mw-ui-icon-edit mw-ui-icon-wikimedia-edit"></span><span>edit</span>
+</a>
+</span></h2>
+<p>Requirements:
+</p>
+<ul><li>libshacccg.suprx</li>
+<li>Your own copy of the game (purchase from <a rel="nofollow" class="external text" href="https://store.steampowered.com/app/3587610/The_Dark_Queen_of_Mortholme/">Steam</a>)</li></ul>
+<p>Prepare the game files:
+</p>
+<ul><li>Clone or download the PSVita patch repository.</li>
+<li>Locate <code>The Dark Queen Of Mortholme.exe</code> in the downloaded game folder.</li>
+<li>Place it inside the patch repository folder.</li>
+<li>Using Python 3, execute the following command or double click it to execute it: <code>python pck_patch_gui.py</code></li>
+<li>Set up the following paths and press "Apply Patch":
+<ul><li>Original (.pak/.exe): <code>The Dark Queen Of Mortholme.exe</code></li>
+<li>Patch Folder: <code>The-Dark-Queen-Of-Mortholme-psvita/patch</code></li>
+<li>Output .pak: <code>game.pak</code></li>
+<li>VPK Template: <code>The-Dark-Queen-Of-Mortholme-psvita/vpk_template</code></li>
+<li>Output .vpk: <code>game.vpk</code></li>
+<li>With Build VPK after repack enabled.</li></ul></li></ul>
+<p>You now have two options to install it:
+</p>
+<ul><li>Install via VPK - Copy the generated <code>game.vpk</code> to your Vita and install it using <a href="/wiki/VitaShell" title="VitaShell">VitaShell</a>.</li>
+<li>If you've downloaded the game on <a href="/wiki/VitaDB_Downloader" title="VitaDB Downloader">VitaDB</a> - Place the <code>game.pck</code> file in <code>ux0:app/MORT00001/</code>.</li></ul>
+<h2><span class="mw-headline" id="Screenshots">Screenshots</span><span class="mw-editsection">
+	<a role="button" href="/index.php?title=The_Dark_Queen_Of_Mortholme_Vita&amp;action=edit&amp;section=2" title="Edit section: Screenshots" class="cdx-button cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only ">
+    <span class="citizen-ui-icon mw-ui-icon-edit mw-ui-icon-wikimedia-edit"></span><span>edit</span>
+</a>
+</span></h2>
+<table style="width: 640px; max-width: 100%; margin-left: 0em;">
+<tbody><tr>
+<td>
+<p><img src="https://dlhb.gamebrew.org/vitahomebrews/images/TheDarkQueenOfMortholmeVita2.png" alt="TheDarkQueenOfMortholmeVita2.png" />
+<img src="https://dlhb.gamebrew.org/vitahomebrews/images/TheDarkQueenOfMortholmeVita3.png" alt="TheDarkQueenOfMortholmeVita3.png" />
+</p>
+</td></tr></tbody></table>
+<h2><span class="mw-headline" id="Changelog">Changelog</span><span class="mw-editsection">
+	<a role="button" href="/index.php?title=The_Dark_Queen_Of_Mortholme_Vita&amp;action=edit&amp;section=3" title="Edit section: Changelog" class="cdx-button cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only ">
+    <span class="citizen-ui-icon mw-ui-icon-edit mw-ui-icon-wikimedia-edit"></span><span>edit</span>
+</a>
+</span></h2>
+<p><b>v1.00</b>
+</p>
+<ul><li>First release.</li>
+<li>The some shaders have been disabled.</li>
+<li>Reflections are enabled.</li></ul>
+<h2><span class="mw-headline" id="Credits">Credits</span><span class="mw-editsection">
+	<a role="button" href="/index.php?title=The_Dark_Queen_Of_Mortholme_Vita&amp;action=edit&amp;section=4" title="Edit section: Credits" class="cdx-button cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only ">
+    <span class="citizen-ui-icon mw-ui-icon-edit mw-ui-icon-wikimedia-edit"></span><span>edit</span>
+</a>
+</span></h2>
+<ul><li><a rel="nofollow" class="external text" href="https://store.steampowered.com/search/?developer=Mosu">Mosu</a> for creating the original game.</li></ul>
+<h2><span class="mw-headline" id="External_links">External links</span><span class="mw-editsection">
+	<a role="button" href="/index.php?title=The_Dark_Queen_Of_Mortholme_Vita&amp;action=edit&amp;section=5" title="Edit section: External links" class="cdx-button cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only ">
+    <span class="citizen-ui-icon mw-ui-icon-edit mw-ui-icon-wikimedia-edit"></span><span>edit</span>
+</a>
+</span></h2>
+<ul><li>GitHub - <a rel="nofollow" class="external free" href="https://github.com/Rocroverss/The-Dark-Queen-Of-Mortholme-psvita">https://github.com/Rocroverss/The-Dark-Queen-Of-Mortholme-psvita</a></li>
+<li>VitaDB - <a rel="nofollow" class="external free" href="https://www.rinnegatamante.eu/vitadb/#/info/1612">https://www.rinnegatamante.eu/vitadb/#/info/1612</a></li></ul>
+<!-- 
+NewPP limit report
+Cached time: 20261107181308
+Cache expiry: 86400
+Reduced expiry: false
+Complications: [show‐toc]
+CPU time usage: 0.029 seconds
+Real time usage: 0.033 seconds
+Preprocessor visited node count: 107/1000000
+Post‐expand include size: 3573/2097152 bytes
+Template argument size: 316/2097152 bytes
+Highest expansion depth: 4/100
+Expensive parser function count: 0/100
+Unstrip recursion depth: 0/20
+Unstrip post‐expand size: 0/5000000 bytes
+Lua time usage: 0.004/7.000 seconds
+Lua memory usage: 558020/52428800 bytes
+-->
+<!--
+Transclusion expansion time report (%,ms,calls,template)
+100.00%   18.250      1 Template:Infobox_Vita_Homebrews
+100.00%   18.250      1 -total
+-->
+
+<!-- Saved in parser cache with key gamebrew:pcache:idhash:46133-0!canonical and timestamp 20261107181308 and revision id 211608. Rendering was triggered because: page-view
+ -->
+</div>
