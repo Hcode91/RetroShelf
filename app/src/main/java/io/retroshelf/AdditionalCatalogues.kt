@@ -21,7 +21,7 @@ class RequestGate {
 class WebsiteSource(override val id: String, override val name: String, override val website: String,
     console: String, override val section: String, override val description: String) : GameProvider {
     override val nativeBrowsing = false
-    override val connectionHint = "Website only · opens in browser"
+    override val connectionHint get() = if(WebsitePolicy.embedded(id, website)) "Original website · in-app WebView" else "Website only · opens in browser"
     override val supportedConsoles = setOf(console)
     override suspend fun fetchGames(refresh: Boolean): List<Game> = throw IOException("Open this source in your browser. Native indexing is unavailable under its access policy.")
 }
@@ -150,7 +150,7 @@ object SourceRegistry {
     fun create(http: JsonHttp) = ProviderRegistry(
         listOf(UniversalDb(http), HomebrewRepository(http), Ziperto(http), WordPressSource(http, WordPressSite.NXBREW),
             HtmlCatalogue(http, HtmlSite.RMN), RpgMakerArchive(http), HtmlCatalogue(http, HtmlSite.SUPERPSX),
-            WebsiteSource("steamrip", "SteamRIP", "https://steamrip.com/games-list-page/", "PC", "PC catalogues", "Website link. Native indexing is unavailable under this site's robots policy."),
-            WebsiteSource("nopaystation-ps3", "NoPayStation · PlayStation 3", "https://nopaystation.com/search?query=&platform=ps3&category=game&limit=10&orderBy=completionDate&sort=DESC&missing=Show", "PS3", "PS3 catalogues", "Website link. Native indexing is unavailable under this site's robots policy.")) +
+            WebsiteSource("steamrip", "SteamRIP", "https://steamrip.com/games-list-page/", "PC", "PC catalogues", "In-app website view with an optional names-and-pictures display. No native catalogue indexing."),
+            WebsiteSource("nopaystation-ps3", "NoPayStation · PlayStation 3", "https://nopaystation.com/search?query=&platform=ps3&category=game&limit=10&orderBy=completionDate&sort=DESC&missing=Show", "PS3", "PS3 catalogues", "In-app website view with an optional names-and-pictures display. No native catalogue indexing.")) +
             GameBrewCatalogue.all.map { GameBrew(http, catalogue = it) })
 }

@@ -80,10 +80,10 @@ Source registration now lives in `SourceRegistry.create(http)`. PC is labelled *
 | Internet Archive RPGMaker.net archive | Public `advancedsearch.php` collection query and `/metadata/{identifier}` | 50 records per requested page; 3,820 records verified |
 | NXbrew | Public WordPress category 22 at `nxbrew.me/wp-json/wp/v2/posts` | 100 per explicit page; 1,308 category records verified |
 | SuperPSX PS4 | Public category HTML and article HTML | 20 entries observed on page 1; explicit next-page links |
-| SteamRIP PC | Browser only | `robots.txt` disallows general crawlers; no native index or game entries fabricated |
-| NoPayStation PS3 | Browser only | `robots.txt` disallows general crawlers; no native index, package/licensing-key extraction or fabricated game data |
+| SteamRIP PC | Original website WebView | `robots.txt` disallows general crawlers; no native index or game entries fabricated |
+| NoPayStation PS3 | Original website WebView | `robots.txt` disallows general crawlers; no native index, package/licensing-key extraction or fabricated game data |
 
-RPGMaker.net and Archive robots policies permit these public catalogue/metadata paths. NXbrew permits its public category and REST paths. SuperPSX allows catalogue/article HTML but explicitly disallows `/wp-json/` and site search paths, so the adapter uses Jsoup over the permitted HTML. All native requests are paced and only user-selected sources/pages are fetched. Browser-only entries have `nativeBrowsing=false`, an explicit status, and are excluded from native Search.
+RPGMaker.net and Archive robots policies permit these public catalogue/metadata paths. NXbrew permits its public category and REST paths. SuperPSX allows catalogue/article HTML but explicitly disallows `/wp-json/` and site search paths, so the adapter uses Jsoup over the permitted HTML. All native requests are paced and only user-selected sources/pages are fetched. Website-only entries have `nativeBrowsing=false`, an explicit status, and are excluded from native Search. SteamRIP and NoPayStation now use the embedded original-website view; future unsupported website entries fall back to the external browser.
 
 NXbrew uses the same parameterized `WordPressSource` implementation as Ziperto. It parses factual two-column information tables as well as colon-separated metadata. Source labels are retained: its first 100 records included 89 Switch and 11 Switch 2 records. The adapter saves only games matching its supported Switch console, while the parser retains the true platform label. It never changes a Switch 2 label to Switch.
 
@@ -92,3 +92,14 @@ GameBrew now registers `gamebrew-ds`, `gamebrew-gb`, `gamebrew-vita` and `gamebr
 Original websites handle new-source binary downloads. The Archive collection is a real collection with game child items, not one fabricated game representing the collection. No upload/publication timestamp is presented as an original game release date. No source game license is inferred from its host's availability.
 
 Fixture provenance is recorded in `app/src/test/resources/ADDITIONAL-SOURCE-FIXTURES.md` and `GAMEBREW-LICENSE.md`.
+
+
+## Display-only original website mode
+
+`WebsiteScreen` handles only `steamrip` and `nopaystation-ps3`, with origin checks in `WebsitePolicy`. It loads the original website once per navigation/restoration and uses `website-reader.js` to change current-page CSS/classes. The script exports no game names, pictures, package/license data or native catalogue records. There is no native JavaScript interface, off-page crawler or automatic detail-page fetching.
+
+The reader recognizes SteamRIP A–Z entries / supported homepage cards and NoPayStation result-table rows. It preserves existing name links/images, hides unrelated current-page elements and restores the original presentation when disabled. Dynamic row insertions are handled by a debounced local DOM observer. Recognized challenge/login/consent gates are checked in the original layout and remain visible. Unsupported layouts and blocked inline styles retain the original page. No selector match is treated as a reason to bypass protections.
+
+The supplied index pages have no game cover artwork in their loaded HTML; filtering cannot create those images. A SteamRIP homepage navigation button is explicit and user initiated. This website mode uses normal WebView caching, which can revalidate/request resources; it is intentionally separate from permanent Room metadata caching. Display toggles do not reload pages. File/content access, cleartext mixed content, automatic popups and third-party cookies are disabled; HTTPS/TLS defaults and Safe Browsing remain enabled. External links require a user gesture and open the external browser. Downloads are handed back to the user's browser through the Browser control.
+
+Local Playwright fixture tests live in `tools/reader-tests` and run in the Android build workflow. A separate Android WebView fixture test verifies script activation/restoration in the device-test workflow. Neither ordinary test contacts live websites.

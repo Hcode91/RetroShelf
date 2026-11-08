@@ -28,6 +28,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tools/reader-tests/package-lock.json
+      - name: Reader display browser tests
+        working-directory: tools/reader-tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm test
       - name: Unit tests and lint
         run: gradle :app:testDebugUnitTest :app:lintDebug --stacktrace --no-daemon
       - name: Build debug APK

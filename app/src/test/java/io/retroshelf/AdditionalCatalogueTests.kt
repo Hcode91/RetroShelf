@@ -22,7 +22,7 @@ class AdditionalCatalogueTests {
     }
     @Test fun `browser-only providers never return synthetic games or index blocked sites`() = runTest {
         val source=SourceRegistry.create(JsonHttp(JsonHttp.client())).get("nopaystation-ps3")
-        assertTrue(source.connectionHint.contains("browser"))
+        assertTrue(source.connectionHint.contains("WebView"))
         try { source.fetchGames(); fail("Browser source must not claim a native catalogue") } catch(_: java.io.IOException) { }
     }
     @Test fun `RPGMaker real table metadata and details normalize`() {

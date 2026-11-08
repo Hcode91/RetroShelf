@@ -68,6 +68,7 @@ fun RetroShelf(vm: ShelfViewModel = viewModel()) {
                 composable("home") { HomeScreen(vm, nav) }
                 composable("console/{console}") { SourcesScreen(it.arguments!!.getString("console")!!, vm, nav) }
                 composable("catalogue/{console}/{provider}") { CatalogueScreen(it.arguments!!.getString("console")!!, it.arguments!!.getString("provider")!!, vm, nav) }
+                composable("website/{provider}") { WebsiteScreen(vm.graph.registry.get(it.arguments!!.getString("provider")!!)) }
                 composable("game/{id}") { DetailsScreen(it.arguments!!.getString("id")!!, vm) }
                 composable("search") { SearchScreen(vm, nav) }
                 composable("favorites") {
@@ -122,7 +123,7 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
         providers.groupBy { it.section }.forEach { (section, sources) ->
             item { Text(section, style = MaterialTheme.typography.titleLarge) }
             items(sources) { p ->
-                ElevatedCard(onClick = { if(p.id !in disabled) { if(p.nativeBrowsing) nav.navigate("catalogue/$console/${p.id}") else openWebsite(context, p.website) } }) {
+                ElevatedCard(onClick = { if(p.id !in disabled) { if(p.nativeBrowsing) nav.navigate("catalogue/$console/${p.id}") else if(WebsitePolicy.embedded(p.id, p.website)) nav.navigate("website/${p.id}") else openWebsite(context, p.website) } }) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Icon(Icons.Default.Language, null, tint = MaterialTheme.colorScheme.primary)
                         Text(p.name, style = MaterialTheme.typography.titleLarge); Text(p.description)
@@ -308,14 +309,14 @@ private fun openGame(game: Game, vm: ShelfViewModel, nav: NavHostController) { v
         item { OutlinedButton(onClick = vm::clearCatalogue) { Text("Clear catalogue cache") } }
         item { Text("Provider management", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> ToggleRow(p.name, p.id !in disabled) { vm.enable(p.id, it) } }
-        item { Text("About RetroShelf 0.3.0", style = MaterialTheme.typography.titleLarge); Text("A native browser for game catalogues. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
+        item { Text("About RetroShelf 0.3.1", style = MaterialTheme.typography.titleLarge); Text("A native browser for game catalogues. Game data and images belong to their respective authors. No games are bundled. Only individually reviewed distributions have direct download buttons.") }
         item { Text("Source attribution", style = MaterialTheme.typography.titleLarge) }
         items(vm.graph.registry.providers) { p -> Column { Text(p.attribution, style = MaterialTheme.typography.bodySmall); TextButton(onClick = { openWebsite(context, p.website) }) { Text("${p.name} ↗") } } }
         item { Text("Homebrew Hub API access could not be verified (HTTP 403). GBA uses its public upstream repository. Game Boy and Game Boy Color homebrew use GameBrew. Universal search is deferred; search each enabled catalogue using the Search tab.", style = MaterialTheme.typography.bodySmall) }
     }
 }
 @Composable private fun ToggleRow(title: String, value: Boolean, onChange: (Boolean) -> Unit) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(title, Modifier.weight(1f)); Switch(value, onChange) } }
-private fun openWebsite(context: android.content.Context, url: String) {
+internal fun openWebsite(context: android.content.Context, url: String) {
     if(!UrlSafety.valid(url)) return
     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch(_: Exception) { android.widget.Toast.makeText(context, "No browser available", android.widget.Toast.LENGTH_SHORT).show() }
 }

@@ -1,6 +1,6 @@
 # RetroShelf
 
-Native Android game catalogue browser, built with Kotlin, Jetpack Compose / Material 3, MVVM, Coroutines / Flow, OkHttp, Gson, Jsoup, Coil and Room. No WebView is used. Original HTML/Java proof-of-concept files are preserved under `reference/` for design provenance and are not packaged in the APK.
+Native Android game catalogue browser, built with Kotlin, Jetpack Compose / Material 3, MVVM, Coroutines / Flow, OkHttp, Gson, Jsoup, Coil and Room. The main catalogue is native Compose; SteamRIP and NoPayStation open their original websites in an embedded WebView. Original HTML/Java proof-of-concept files are preserved under `reference/` for design provenance and are not packaged in the APK.
 
 ## Install without Android Studio
 
@@ -59,6 +59,15 @@ Ziperto's loaded pages and next-page cursor are saved without expiry. Use **Load
 - **Switch → Switch catalogues**: NXbrew joins Ziperto. NXbrew's category mixes Switch and Switch 2 records; explicit Switch 2-only records are filtered out of Switch browsing.
 - **DS / Game Boy / PS Vita / PSP → GameBrew homebrew**: native catalogue adapters. Game Boy's System column distinguishes DMG and CGB records; Color-only entries appear under Game Boy Color, using the same saved source without another fetch.
 - **PS4 → PS4 catalogues → SuperPSX**: native permitted HTML listings/details; its restricted API is not used.
-- **PC games → PC catalogues → SteamRIP** and **PS3 → PS3 catalogues → NoPayStation**: clearly labelled browser links. Their general robots policies disallow automated indexing, so the app does not scrape catalogues or pretend native data is available. Browser-only sources are excluded from native Search.
+- **PC games → PC catalogues → SteamRIP** and **PS3 → PS3 catalogues → NoPayStation**: clearly labelled in-app website views. Their general robots policies disallow automated indexing, so the app does not scrape catalogues or pretend native data is available. These website views remain excluded from native Search.
 
 Source pages and original download links open in the device browser. New catalogue adapters do not install games, extract license keys, or follow protected download flows. All saved entries retain the manual-refresh-only policy. See `docs/ADAPTERS.md` for access evidence and limitations.
+
+
+## SteamRIP / NoPayStation website display
+
+Selecting either source now opens its original website inside RetroShelf. **Names + pics** applies a local presentation filter to the current page; toggle it off to restore the original page and its controls. Existing images are retained, while list badges, metadata and site chrome are hidden on supported layouts. The linked A–Z SteamRIP and NoPayStation indexes currently contain no game cover images, so those pages can be names-only. SteamRIP's **Latest games** button navigates to the site's homepage, where supported game cards can retain their supplied images. No covers are fabricated or fetched from unrelated detail pages.
+
+This is a website view, not a native metadata index. Its normal scripts/assets can make their own requests. WebView uses standard browser caching and restores navigation state where Android supports it; reopening or reloading can still make website requests. RetroShelf's no-expiry Room catalogue policy continues to apply to native providers, not these live website pages.
+
+Webpage back/reload, external Browser fallback, page progress/errors and light/dark reader styling are available. Recognized login/consent/challenge screens remain original; unsupported layouts or style restrictions also retain the original page. The app does not expose a JavaScript-to-native data bridge, export page game records, crawl other pages, bypass TLS/challenges, or automatically download files from the WebView.
